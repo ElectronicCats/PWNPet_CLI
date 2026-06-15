@@ -32,8 +32,7 @@ PwnPet badges are virtual Tamagotchi-style pets that live on real hardware. Beyo
 ### Installation
 
 ```sh
-# From the pwnpet/ subdirectory (cd pwnpet/ from the repository root):
-cd pwnpet/
+# From the repository root (PWNPet_CLI/):
 python3 -m venv .venv
 source .venv/bin/activate        # Linux / macOS
 # .venv\Scripts\activate         # Windows
@@ -42,9 +41,9 @@ pip install -r pwnpet_cli/requirements.txt
 chmod +x pwnpet                  # Linux / macOS
 ```
 
-Due to the project's architecture, the `pwnpet` script must be invoked **from inside the `pwnpet/` subdirectory**. Running it directly by name (without a path) will fail unless you configure your shell first (see options below).
+The `pwnpet` script must be invoked **from the repository root** (`PWNPet_CLI/`). Running it directly by name (without a path) will fail unless you configure your shell first (see options below).
 
-Verify the installation by running from within `pwnpet/`:
+Verify the installation by running from the repository root:
 
 ```sh
 ./pwnpet --version
@@ -57,14 +56,13 @@ Choose one of the following options so you don't have to type `./pwnpet` every t
 
 ```sh
 # Option A — add to PATH (append this line to ~/.bashrc or ~/.zshrc):
-export PATH="$PATH:/path/to/Badge-UnknownSecurity-Conference-2026/pwnpet"
+export PATH="$PATH:/path/to/PWNPet_CLI"
 
-# Option B — symbolic link in ~/.local/bin (run from inside pwnpet/):
+# Option B — symbolic link in ~/.local/bin (run from the repository root):
 ln -s "$(pwd)/pwnpet" ~/.local/bin/pwnpet
 
-# Option C — shell alias (append to ~/.bashrc or ~/.zshrc, run from inside pwnpet/):
-alias pwnpet='./pwnpet'
-# Note: with this alias the working directory must still be pwnpet/ when you invoke it.
+# Option C — shell alias (append to ~/.bashrc or ~/.zshrc):
+alias pwnpet='/path/to/PWNPet_CLI/pwnpet'
 ```
 
 ### Solving BLE permission issues
@@ -84,7 +82,7 @@ sudo usermod -aG bluetooth $USER
 ## Command Structure
 
 ```
-pwnpet [--target <addr|name>] [--debug] <subcommand>
+pwnpet [-v] [-d | --debug] [--target <addr|name>] <subcommand>
 ```
 
 If no subcommand is specified, an **interactive session** opens directly (default mode).
@@ -101,8 +99,8 @@ Shows all visible PwnPet badges with their name, MAC address, species, and curre
 
 ```
 Name            Address            Species            State
-PwnPet_1A2B     AA:BB:CC:DD:EE:1A  0x0002 (Pwn Cat)   fearful
-PwnPet_3C4D     AA:BB:CC:DD:EE:2B  0x0003 (Pwn Llama) curious
+PwnPet_1A2B     AA:BB:CC:DD:EE:1A  0x0002 (Pwn Cat)   temeroso
+PwnPet_3C4D     AA:BB:CC:DD:EE:2B  0x0003 (Pwn Llama) curioso
 ```
 
 Useful options:
@@ -149,7 +147,7 @@ Type 'help' for available commands, 'exit' or Ctrl+D to disconnect.
   happiness:         450 / 1000
   hungry:            310 / 1000
   health:            800 / 1000
-  state:             fearful
+  state:             temeroso
   xp:                0
   sensor_value:      2920
   all_missions_done: false
@@ -279,13 +277,13 @@ The creature has a **state** (byte read from the `state` characteristic, `0xFE05
 
 | Byte | State | Terminal color | Meaning |
 |------|-------|----------------|---------|
-| 0 | `fearful` | Yellow | Initial state. The creature is scared and distrustful. |
-| 1 | `curious` | Green | Reached by accumulating enough XP. Starting to open up. |
-| 2 | `loyal` | Blue | Full trust. |
+| 0 | `temeroso` | Yellow | Initial state. The creature is scared and distrustful. |
+| 1 | `curioso` | Green | Reached by accumulating enough XP. Starting to open up. |
+| 2 | `leal` | Blue | Full trust. |
 | 3 | `paranoia` | Bright red | Active distrust. |
-| 4 | `dead (health)` | — | Died from lack of health. |
-| 5 | `dead (overfed)` | — | Died from overfeeding. |
-| 6 | `hungry` | Bright magenta | Critically low energy. |
+| 4 | `muerto (salud)` | — | Died from lack of health. |
+| 5 | `muerto (gordito)` | — | Died from overfeeding. |
+| 6 | `hambriento` | Bright magenta | Critically low energy. |
 
 States `4` and `5` are the two "death" states; the CLI detects them to enable the `arise` command (see below). As you gain XP by caring for and interacting with the creature, it progresses toward states of higher trust, which in turn may unlock additional content.
 
@@ -371,7 +369,7 @@ Some missions can be completed entirely from the CLI; others require **physical 
 
 ### `arise` command — recovering a dead creature
 
-If the creature dies (state `dead (health)` or `dead (overfed)`), the `arise` command appears in the session:
+If the creature dies (state `muerto (salud)` or `muerto (gordito)`), the `arise` command appears in the session:
 
 ```
 (pwnpet) arise
@@ -439,25 +437,25 @@ The firmware exposes its state and actions as **GATT characteristics**. The CLI 
 
 ## CLI Internal Architecture (Python)
 
-The CLI is written in Python 3.10+ and organized as a package under `pwnpet/pwnpet_cli/`. The main entry point is the `pwnpet/pwnpet` shim, which delegates to `pwnpet_cli/__main__.py`; argument parsing and subcommand dispatch live in `pwnpet_cli/cli.py`.
+The CLI is written in Python 3.10+ and organized as a package under `pwnpet_cli/` at the repository root. The main entry point is the `pwnpet` shim (also at the root), which delegates to `pwnpet_cli/__main__.py`; argument parsing and subcommand dispatch live in `pwnpet_cli/cli.py`.
 
 ### Main modules
 
 | Module | Responsibility |
 |--------|----------------|
 | `pwnpet_cli/__main__.py` | Package entry point; called by the `pwnpet` shim via `from pwnpet_cli.__main__ import main` |
-| `pwnpet_cli/cli.py` | `argparse` setup and top-level subcommand dispatch |
+| `pwnpet_cli/cli.py` | `argparse` setup and top-level subcommand dispatch; custom asyncio exception handler that silences harmless `BrokenPipeError` on BLE teardown |
 | `pwnpet_cli/target.py` | Persists the saved badge target in `~/.config/pwnpet/last_target.json` |
-| `pwnpet_cli/transport.py` | BLE abstraction over `bleak`: manages connection, service discovery, GATT read/write, and the composite `play_read_flag()` operation |
-| `pwnpet_cli/chars.py` | Table of public names → UUIDs, per-characteristic decoders, `SPECIES_TABLE`, and `resolve(name_or_0xNNNN)` |
+| `pwnpet_cli/transport.py` | BLE abstraction over `bleak`: scan, connection with retry logic, GATT read/write, and the composite `play_read_flag()` operation (write `0xC003`, settle, read `0xC0FF`) |
+| `pwnpet_cli/chars.py` | Table of public names → 128-bit UUIDs, per-characteristic decoders (`DECODERS`), `SPECIES_TABLE`, and `resolve(name_or_0xNNNN)` |
 | `pwnpet_cli/encoders.py` | User input parsers: `parse_play_hex`, `parse_passkey`, `parse_write_payload` |
 | `pwnpet_cli/format.py` | Raw-bytes-to-text rendering: LE integers, UTF-8, states, `render_bytes_smart` |
 | `pwnpet_cli/ui.py` | Terminal output with [Rich](https://github.com/Textualize/rich): `print_status`, `print_missions`, `print_help`, `ok`, `print_error` |
-| `pwnpet_cli/errors.py` | Typed exceptions: `GattError` (BLE response rejected) and `UsageError` (incorrect arguments) |
-| `pwnpet_cli/commands/` | One module per subcommand; each exposes `add_parser(subparsers)` and `run(args)` |
-| `pwnpet_cli/commands/session_cmd.py` | Interactive REPL with an internal dispatch table (see below) |
-| `pwnpet_cli/commands/_ops.py` | Reusable operations: `fetch_status`, `fetch_missions`, `fetch_flag`, `fetch_mission_hint` |
-| `pwnpet_cli/commands/_shared.py` | Shared GATT response decoding helpers |
+| `pwnpet_cli/errors.py` | Typed exceptions with stable exit codes: `CliError` (base), `UsageError` (1), `TargetNotFoundError` (2), `ConnectionFailedError` (3), `GattError` (4), `NotifyTimeoutError` (5) |
+| `pwnpet_cli/commands/` | One module per CLI subcommand (`scan_cmd`, `target_cmd`, `status_cmd`, `read_cmd`, `write_cmd`, `feed_cmd`, `pet_cmd`, `play_cmd`, `passkey_cmd`, `rename_cmd`, `missions_cmd`, `flag_cmd`); each exposes `add_parser(subparsers)` and `run(args)` |
+| `pwnpet_cli/commands/session_cmd.py` | Interactive REPL with an internal dispatch table (see below); also contains `_dispatch_friendship` — the `friendship` command is **not** a separate module |
+| `pwnpet_cli/commands/_ops.py` | Reusable async operations: `fetch_status`, `fetch_missions`, `fetch_flag`, `fetch_mission_hint` |
+| `pwnpet_cli/commands/_shared.py` | Shared GATT response decoding helpers: `decode(name_or_uuid, raw)` and `print_decoded(value)` (highlights `PWNPET{...}` flags in yellow) |
 
 ### The `session_cmd.py` module in detail
 
@@ -492,10 +490,10 @@ _DISPATCH_TABLE = {
 - `arise` re-checks the death state live, asks for explicit confirmation (`yes`), and only then writes to `factory_reset` (`0xC007`). If the firmware rejects the reset (death too recent), it translates the `GattError` into a clear `Arise blocked` message.
 
 **6. Robust error handling.** Each dispatch is wrapped to distinguish:
-- `KeyboardInterrupt` (`Ctrl+C`): prints `^C` and **continues** without closing the session.
+- `KeyboardInterrupt` (`Ctrl+C`) **inside a running command**: prints `^C` and **continues** without closing the session. `Ctrl+C` or `Ctrl+D` at the prompt itself exits immediately.
 - `UsageError`: incorrect arguments; shows the message and continues.
 - `GattError`: BLE response rejected; shows the error and, if the connection was lost (`conn.is_connected == False`), ends the session with a notice.
-- `Ctrl+D` / `EOFError`: breaks the loop and closes cleanly.
+- `Ctrl+D` / `EOFError` at the prompt: breaks the loop and closes cleanly.
 
 ### Friendship protocol (characteristic `0xC008`)
 
@@ -558,9 +556,9 @@ Only the **public** characteristics (visible game state and interaction inputs) 
 
 ### Debugging
 
-Add `--debug` to any command to see the full traceback in case of an error:
+Add `-d` / `--debug` to any command to see the full traceback in case of an error:
 
 ```sh
 pwnpet --debug session
-pwnpet --debug read happiness
+pwnpet -d read happiness
 ```
