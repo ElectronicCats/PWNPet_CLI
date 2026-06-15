@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 
-from .. import transport, ui
+from .. import format as fmt, transport, ui
 from . import add_target_arg, resolve_target
 from ._ops import fetch_flag
 
@@ -40,7 +40,7 @@ async def execute(conn: transport.Connection, mid: int) -> None:
             "returned an empty flag — try re-completing the mission.[/]"
         )
         return
-    ui.print_decoded(flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace"))
+    ui.print_decoded(fmt.render_utf8(flag_bytes))
 
 
 async def run(args: argparse.Namespace) -> int:
