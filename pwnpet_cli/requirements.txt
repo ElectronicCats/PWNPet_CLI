@@ -1,0 +1,3 @@
+# Runtime deps for the F8 host CLI. Ships in the zip release.
+bleak>=0.22
+rich>=13.0
