@@ -30,24 +30,22 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
-async def run(args: argparse.Namespace) -> int:
-    mid = args.mission_id
-
-    addr = await resolve_target(args)
-    async with transport.Connection(addr) as conn:
-        flag_bytes = await fetch_flag(conn, mid)
-
+async def execute(conn: transport.Connection, mid: int) -> None:
+    flag_bytes = await fetch_flag(conn, mid)
     if flag_bytes is None:
         ui.console.print(f"[dim]Mission {mid} is not completed yet.[/]")
-        return 1
-
+        return
     if all(b == 0 for b in flag_bytes):
         ui.console.print(
             f"[yellow]Mission {mid} is marked complete but the firmware "
             "returned an empty flag — try re-completing the mission.[/]"
         )
-        return 1
+        return
+    print_decoded(flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace"))
 
-    decoded = flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace")
-    print_decoded(decoded)
+
+async def run(args: argparse.Namespace) -> int:
+    addr = await resolve_target(args)
+    async with transport.Connection(addr) as conn:
+        await execute(conn, args.mission_id)
     return 0

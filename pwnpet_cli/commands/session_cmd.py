@@ -12,11 +12,13 @@ import argparse
 import asyncio
 import shlex
 
-from .. import chars, encoders, format as fmt, transport, ui
+from .. import chars, transport, ui
 from ..errors import GattError, UsageError
 from . import add_target_arg, resolve_target
-from ._ops import fetch_flag, fetch_mission_hint, fetch_missions, fetch_status
-from ._shared import decode as _decode, print_decoded as _print_decoded
+from . import (
+    feed_cmd, flag_cmd, missions_cmd, passkey_cmd,
+    pet_cmd, play_cmd, read_cmd, rename_cmd, status_cmd, write_cmd,
+)
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -140,80 +142,45 @@ async def _dispatch_friendship(conn: transport.Connection, argv: list[str]) -> N
 
 
 async def _cmd_feed(conn: transport.Connection, argv: list[str]) -> None:
-    await conn.write(chars.NAME_TO_UUID["feed"], bytes([50]))
-    ui.ok()
+    await feed_cmd.execute(conn)
 
 
 async def _cmd_pet(conn: transport.Connection, argv: list[str]) -> None:
-    await conn.write(chars.NAME_TO_UUID["pet"], b"")
-    ui.ok()
+    await pet_cmd.execute(conn)
 
 
 async def _cmd_play(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("play requires a hex argument (e.g. 0xAABBCCDD)")
-    try:
-        magic = encoders.parse_play_hex(argv[0])
-    except ValueError as exc:
-        raise UsageError(str(exc))
-    result = await conn.play_read_flag(magic)
-    _print_decoded(fmt.render_bytes_smart(result))
+    await play_cmd.execute(conn, argv[0])
 
 
 async def _cmd_status(conn: transport.Connection, argv: list[str]) -> None:
-    values = await fetch_status(conn)
-    ui.print_status(values)
+    await status_cmd.execute(conn)
 
 
 async def _cmd_rename(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("rename requires a name argument (max 16 bytes)")
-    payload = argv[0].encode("utf-8")
-    if len(payload) == 0:
-        raise UsageError("name cannot be empty")
-    if len(payload) > 16:
-        raise UsageError(f"name too long: {len(payload)} bytes (max 16 UTF-8 bytes)")
-    await conn.write(chars.NAME_TO_UUID["rename"], payload)
-    name_bytes = await conn.read(chars.NAME_TO_UUID["name"])
-    confirmed = name_bytes.rstrip(b"\x00").decode("utf-8", errors="replace")
-    ui.console.print(f"name: {confirmed}")
+    await rename_cmd.execute(conn, argv[0])
 
 
 async def _cmd_passkey(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("passkey requires exactly 3 digits (e.g. 163)")
-    try:
-        payload = encoders.parse_passkey(argv[0])
-    except ValueError as exc:
-        raise UsageError(str(exc))
-    await conn.write(chars.NAME_TO_UUID["passkey_input"], payload)
-    ui.ok()
+    await passkey_cmd.execute(conn, argv[0])
 
 
 async def _cmd_read(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("read requires a char name or 0xNNNN UUID")
-    try:
-        uuid = chars.resolve(argv[0])
-    except KeyError:
-        raise UsageError(f"unknown char {argv[0]!r} (public name or 0xNNNN UUID)")
-    raw = await conn.read(uuid)
-    _print_decoded(_decode(argv[0], raw))
+    await read_cmd.execute(conn, argv[0])
 
 
 async def _cmd_write(conn: transport.Connection, argv: list[str]) -> None:
     if len(argv) < 2:
         raise UsageError("write requires <name|0xNNNN> and <hex-payload>")
-    try:
-        uuid = chars.resolve(argv[0])
-    except KeyError:
-        raise UsageError(f"unknown char {argv[0]!r} (public name or 0xNNNN UUID)")
-    try:
-        payload = encoders.parse_write_payload(argv[1])
-    except ValueError as exc:
-        raise UsageError(str(exc))
-    await conn.write(uuid, payload)
-    ui.ok()
+    await write_cmd.execute(conn, argv[0], argv[1])
 
 
 async def _cmd_missions(conn: transport.Connection, argv: list[str]) -> None:
@@ -223,16 +190,7 @@ async def _cmd_missions(conn: transport.Connection, argv: list[str]) -> None:
         ns = _parser.parse_args(argv)
     except (argparse.ArgumentError, SystemExit) as exc:
         raise UsageError(f"missions: {exc}")
-
-    creature_name, missions = await fetch_missions(conn)
-    ui.print_missions(creature_name, missions)
-
-    if ns.hint is not None:
-        hint_text = await fetch_mission_hint(conn, ns.hint)
-        if hint_text:
-            ui.console.print(f'\nHint for mission {ns.hint}: [italic]"{hint_text}"[/]')
-        else:
-            ui.console.print(f"\n[dim]No hint available for mission {ns.hint}.[/]")
+    await missions_cmd.execute(conn, ns.hint)
 
 
 async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
@@ -242,18 +200,7 @@ async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
         mid = int(argv[0])
     except ValueError:
         raise UsageError(f"flag: expected a mission id number, got {argv[0]!r}")
-
-    flag_bytes = await fetch_flag(conn, mid)
-    if flag_bytes is None:
-        ui.console.print(f"[dim]Mission {mid} is not completed yet.[/]")
-    elif all(b == 0 for b in flag_bytes):
-        ui.console.print(
-            f"[yellow]Mission {mid} is marked complete but the firmware "
-            "returned an empty flag — try re-completing the mission.[/]"
-        )
-    else:
-        decoded = flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace")
-        _print_decoded(decoded)
+    await flag_cmd.execute(conn, mid)
 
 
 _DISPATCH_TABLE = {

@@ -21,6 +21,15 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
+async def execute(conn: transport.Connection, char: str) -> None:
+    try:
+        uuid = chars.resolve(char)
+    except KeyError:
+        raise UsageError(f"unknown char {char!r} (public name or 0xNNNN UUID)")
+    raw = await conn.read(uuid)
+    _print_decoded(_decode(char, raw))
+
+
 async def run(args: argparse.Namespace) -> int:
     try:
         uuid = chars.resolve(args.char)

@@ -15,9 +15,13 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
+async def execute(conn: transport.Connection) -> None:
+    values = await fetch_status(conn)
+    ui.print_status(values)
+
+
 async def run(args: argparse.Namespace) -> int:
     addr = await resolve_target(args)
     async with transport.Connection(addr) as conn:
-        values = await fetch_status(conn)
-    ui.print_status(values)
+        await execute(conn)
     return 0

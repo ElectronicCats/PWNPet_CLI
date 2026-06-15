@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from .. import chars, encoders, transport
+from .. import chars, encoders, transport, ui
 from ..errors import UsageError
 from . import add_target_arg, resolve_target
 
@@ -17,17 +17,21 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
-async def run(args: argparse.Namespace) -> int:
+async def execute(conn: transport.Connection, char: str, payload_str: str) -> None:
     try:
-        uuid = chars.resolve(args.char)
+        uuid = chars.resolve(char)
     except KeyError:
-        raise UsageError(f"unknown char {args.char!r} (use a public name or 0xNNNN UUID)")
+        raise UsageError(f"unknown char {char!r} (public name or 0xNNNN UUID)")
     try:
-        payload = encoders.parse_write_payload(args.payload)
+        payload = encoders.parse_write_payload(payload_str)
     except ValueError as exc:
         raise UsageError(str(exc))
+    await conn.write(uuid, payload)
+    ui.ok()
 
+
+async def run(args: argparse.Namespace) -> int:
     addr = await resolve_target(args)
     async with transport.Connection(addr) as conn:
-        await conn.write(uuid, payload)
+        await execute(conn, args.char, args.payload)
     return 0

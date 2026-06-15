@@ -35,26 +35,21 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
-async def run(args: argparse.Namespace) -> int:
-    addr = await resolve_target(args)
-
-    async with transport.Connection(addr) as conn:
-        creature_name, missions = await fetch_missions(conn)
-
-        hint_text: str | None = None
-        if args.hint is not None:
-            hint_text = await fetch_mission_hint(conn, args.hint)
-
+async def execute(conn: transport.Connection, hint: int | None = None) -> None:
+    creature_name, missions = await fetch_missions(conn)
+    hint_text: str | None = None
+    if hint is not None:
+        hint_text = await fetch_mission_hint(conn, hint)
     ui.print_missions(creature_name, missions)
-
     if hint_text is not None:
         if hint_text:
-            ui.console.print(
-                f'\nHint for mission {args.hint}: [italic]"{hint_text}"[/]'
-            )
+            ui.console.print(f'\nHint for mission {hint}: [italic]"{hint_text}"[/]')
         else:
-            ui.console.print(
-                f"\n[dim]No hint available for mission {args.hint}.[/]"
-            )
+            ui.console.print(f"\n[dim]No hint available for mission {hint}.[/]")
 
+
+async def run(args: argparse.Namespace) -> int:
+    addr = await resolve_target(args)
+    async with transport.Connection(addr) as conn:
+        await execute(conn, args.hint)
     return 0

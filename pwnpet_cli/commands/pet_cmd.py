@@ -14,9 +14,13 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
+async def execute(conn: transport.Connection) -> None:
+    await conn.write(chars.NAME_TO_UUID["pet"], b"")
+    ui.ok()
+
+
 async def run(args: argparse.Namespace) -> int:
     addr = await resolve_target(args)
     async with transport.Connection(addr) as conn:
-        await conn.write(chars.NAME_TO_UUID["pet"], b"")
-    ui.ok()
+        await execute(conn)
     return 0

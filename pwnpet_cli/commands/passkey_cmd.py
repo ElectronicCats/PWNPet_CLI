@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from .. import chars, encoders, transport
+from .. import chars, encoders, transport, ui
 from ..errors import UsageError
 from . import add_target_arg, resolve_target
 
@@ -18,17 +18,20 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
+async def execute(conn: transport.Connection, digits: str) -> None:
+    try:
+        payload = encoders.parse_passkey(digits)
+    except ValueError as exc:
+        raise UsageError(str(exc))
+    await conn.write(chars.NAME_TO_UUID["passkey_input"], payload)
+    ui.ok()
+
+
 async def run(args: argparse.Namespace) -> int:
     if not 1 <= args.times <= 255:
         raise UsageError("--times must be between 1 and 255")
-
-    try:
-        payload = encoders.parse_passkey(args.digits)
-    except ValueError as exc:
-        raise UsageError(str(exc))
-
     addr = await resolve_target(args)
     async with transport.Connection(addr) as conn:
         for _ in range(args.times):
-            await conn.write(chars.NAME_TO_UUID["passkey_input"], payload)
+            await execute(conn, args.digits)
     return 0
