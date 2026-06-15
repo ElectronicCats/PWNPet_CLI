@@ -7,7 +7,6 @@ import argparse
 from .. import encoders, format as fmt, transport, ui
 from ..errors import UsageError
 from . import add_target_arg, resolve_target
-from ._shared import print_decoded
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -23,7 +22,7 @@ async def execute(conn: transport.Connection, magic_str: str) -> None:
     except ValueError as exc:
         raise UsageError(str(exc))
     result = await conn.play_read_flag(magic_bytes)
-    print_decoded(fmt.render_bytes_smart(result))
+    ui.print_decoded(fmt.render_bytes_smart(result))
 
 
 async def run(args: argparse.Namespace) -> int:

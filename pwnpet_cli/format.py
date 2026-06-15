@@ -30,8 +30,7 @@ def render_u16_le(b: bytes) -> int:
     return int.from_bytes(b, "little")
 
 
-def render_u32_le(b: bytes) -> int:
-    return int.from_bytes(b, "little")
+render_u32_le = render_u16_le
 
 
 def render_utf8(b: bytes) -> str:

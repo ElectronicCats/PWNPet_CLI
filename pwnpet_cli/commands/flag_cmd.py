@@ -12,7 +12,6 @@ import argparse
 from .. import transport, ui
 from . import add_target_arg, resolve_target
 from ._ops import fetch_flag
-from ._shared import print_decoded
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -41,7 +40,7 @@ async def execute(conn: transport.Connection, mid: int) -> None:
             "returned an empty flag — try re-completing the mission.[/]"
         )
         return
-    print_decoded(flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace"))
+    ui.print_decoded(flag_bytes.rstrip(b"\x00").decode("ascii", errors="replace"))
 
 
 async def run(args: argparse.Namespace) -> int:

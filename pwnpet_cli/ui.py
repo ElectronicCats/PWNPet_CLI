@@ -100,6 +100,19 @@ def print_missions(creature_name: str, missions: list[tuple[int, bool]]) -> None
         console.print(f"  [{mark}] mission [cyan]{mid}[/]")
 
 
+def decode(name_or_uuid: str, raw: bytes) -> str:
+    if name_or_uuid in chars.DECODERS:
+        return str(chars.DECODERS[name_or_uuid](raw))  # type: ignore[operator]
+    return fmt.render_bytes_smart(raw)
+
+
+def print_decoded(value: str) -> None:
+    if value.startswith("PWNPET{"):
+        console.print(f"[bold bright_yellow]{value}[/]")
+    else:
+        console.print(value)
+
+
 def ok(msg: str = "ok") -> None:
     console.print(f"[green]{msg}[/]")
 

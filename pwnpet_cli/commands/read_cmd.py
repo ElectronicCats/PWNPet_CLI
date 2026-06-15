@@ -8,7 +8,6 @@ import asyncio
 from .. import chars, encoders, format as fmt, transport, ui
 from ..errors import GattError, UsageError
 from . import add_target_arg, resolve_target
-from ._shared import decode as _decode, print_decoded as _print_decoded
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -27,7 +26,7 @@ async def execute(conn: transport.Connection, char: str) -> None:
     except KeyError:
         raise UsageError(f"unknown char {char!r} (public name or 0xNNNN UUID)")
     raw = await conn.read(uuid)
-    _print_decoded(_decode(char, raw))
+    ui.print_decoded(ui.decode(char, raw))
 
 
 async def run(args: argparse.Namespace) -> int:
@@ -49,7 +48,7 @@ async def run(args: argparse.Namespace) -> int:
                 raise UsageError(str(exc))
             await conn.write(chars.NAME_TO_UUID["passkey_input"], passkey_bytes)
             raw = await conn.read(uuid)
-            _print_decoded(_decode(args.char, raw))
+            ui.print_decoded(ui.decode(args.char, raw))
             return 0
 
         if args.watch:
@@ -60,11 +59,11 @@ async def run(args: argparse.Namespace) -> int:
                     except GattError as exc:
                         ui.warn(f"connection lost: {exc}")
                         return 1
-                    _print_decoded(_decode(args.char, raw))
+                    ui.print_decoded(ui.decode(args.char, raw))
                     await asyncio.sleep(args.interval)
             except (asyncio.CancelledError, KeyboardInterrupt):
                 return 0
 
         raw = await conn.read(uuid)
-        _print_decoded(_decode(args.char, raw))
+        ui.print_decoded(ui.decode(args.char, raw))
         return 0
