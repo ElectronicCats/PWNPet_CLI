@@ -10,8 +10,14 @@ from . import add_target_arg, resolve_target
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("play", help="Play with the badge (write u32 magic).")
-    parser.add_argument("magic", metavar="<hex>", help="u32 hex value (0x prefix optional, e.g. 0xAABBCCDD).")
+    parser = subparsers.add_parser(
+        "play", help="Play with the badge (write u32 magic)."
+    )
+    parser.add_argument(
+        "magic",
+        metavar="<hex>",
+        help="u32 hex value (0x prefix optional, e.g. 0xAABBCCDD).",
+    )
     add_target_arg(parser)
     parser.set_defaults(handler=run)
 

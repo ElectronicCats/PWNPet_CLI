@@ -12,7 +12,11 @@ from . import add_target_arg, resolve_target
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("write", help="Write hex bytes to a characteristic.")
     parser.add_argument("char", metavar="<name|uuid>")
-    parser.add_argument("payload", metavar="<hex>", help="Hex bytes (even-length, no 0x). Empty string allowed.")
+    parser.add_argument(
+        "payload",
+        metavar="<hex>",
+        help="Hex bytes (even-length, no 0x). Empty string allowed.",
+    )
     add_target_arg(parser)
     parser.set_defaults(handler=run)
 

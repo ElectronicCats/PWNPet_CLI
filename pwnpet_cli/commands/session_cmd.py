@@ -16,8 +16,16 @@ from .. import chars, transport, ui
 from ..errors import GattError, UsageError
 from . import add_target_arg, resolve_target
 from . import (
-    feed_cmd, flag_cmd, missions_cmd, passkey_cmd,
-    pet_cmd, play_cmd, read_cmd, rename_cmd, status_cmd, write_cmd,
+    feed_cmd,
+    flag_cmd,
+    missions_cmd,
+    passkey_cmd,
+    pet_cmd,
+    play_cmd,
+    read_cmd,
+    rename_cmd,
+    status_cmd,
+    write_cmd,
 )
 
 
@@ -44,10 +52,10 @@ async def _creature_is_dead(conn: transport.Connection) -> bool:
 _FRIENDSHIP_UUID = chars.NAME_TO_UUID["friendship_cmd"]
 
 # Opcodes matching firmware friendship.h FRIENDSHIP_BLE_* constants.
-_BLE_COUNT    = 0x01
-_BLE_GET      = 0x02
-_BLE_REMOVE   = 0x03
-_BLE_BLOCK    = 0x04
+_BLE_COUNT = 0x01
+_BLE_GET = 0x02
+_BLE_REMOVE = 0x03
+_BLE_BLOCK = 0x04
 _BLE_PROX_GET = 0x05
 _BLE_PROX_SET = 0x06
 
@@ -187,21 +195,23 @@ async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
 
 
 def _no_args(fn):
-    async def _w(conn, _): await fn(conn)
+    async def _w(conn, _):
+        await fn(conn)
+
     return _w
 
 
 _DISPATCH_TABLE = {
-    "feed":       _no_args(feed_cmd.execute),
-    "pet":        _no_args(pet_cmd.execute),
-    "play":       _cmd_play,
-    "status":     _no_args(status_cmd.execute),
-    "rename":     _cmd_rename,
-    "passkey":    _cmd_passkey,
-    "read":       _cmd_read,
-    "write":      _cmd_write,
-    "missions":   _cmd_missions,
-    "flag":       _cmd_flag,
+    "feed": _no_args(feed_cmd.execute),
+    "pet": _no_args(pet_cmd.execute),
+    "play": _cmd_play,
+    "status": _no_args(status_cmd.execute),
+    "rename": _cmd_rename,
+    "passkey": _cmd_passkey,
+    "read": _cmd_read,
+    "write": _cmd_write,
+    "missions": _cmd_missions,
+    "flag": _cmd_flag,
     "friendship": _dispatch_friendship,
 }
 
@@ -216,7 +226,9 @@ async def _dispatch(conn: transport.Connection, cmd: str, argv: list[str]) -> No
 
 async def _repl(conn: transport.Connection, addr: str) -> None:
     ui.console.print(f"[green]Connected to {addr}.[/]")
-    ui.console.print("[dim]Type 'help' for available commands, 'exit' or Ctrl+D to disconnect.[/]\n")
+    ui.console.print(
+        "[dim]Type 'help' for available commands, 'exit' or Ctrl+D to disconnect.[/]\n"
+    )
     creature_dead = False
     try:
         await _dispatch(conn, "status", [])
@@ -276,7 +288,9 @@ async def _repl(conn: transport.Connection, addr: str) -> None:
                     "wait 3 minutes after death before using arise."
                 )
                 continue
-            ui.console.print("[yellow]Factory reset initiated. Device will reboot in ~1 s.[/]")
+            ui.console.print(
+                "[yellow]Factory reset initiated. Device will reboot in ~1 s.[/]"
+            )
             return
 
         try:

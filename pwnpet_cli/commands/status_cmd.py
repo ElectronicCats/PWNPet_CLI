@@ -10,7 +10,9 @@ from ._ops import fetch_status
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("status", help="Read all public state in one bundle.")
+    parser = subparsers.add_parser(
+        "status", help="Read all public state in one bundle."
+    )
     add_target_arg(parser)
     parser.set_defaults(handler=run)
 

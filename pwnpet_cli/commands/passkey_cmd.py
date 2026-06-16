@@ -11,9 +11,16 @@ from . import add_target_arg, resolve_target
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("passkey", help="Submit 3-digit passkey.")
-    parser.add_argument("digits", metavar="<digits>", help="Exactly 3 ASCII digits, e.g. 123.")
-    parser.add_argument("--times", metavar="N", type=int, default=1,
-                        help="Send the passkey N times in a single connection (1–255).")
+    parser.add_argument(
+        "digits", metavar="<digits>", help="Exactly 3 ASCII digits, e.g. 123."
+    )
+    parser.add_argument(
+        "--times",
+        metavar="N",
+        type=int,
+        default=1,
+        help="Send the passkey N times in a single connection (1–255).",
+    )
     add_target_arg(parser)
     parser.set_defaults(handler=run)
 

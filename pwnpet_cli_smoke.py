@@ -54,7 +54,11 @@ def run_cli(args, timeout=DEFAULT_TIMEOUT):
     env = {"PYTHONPATH": str(SCRIPTS_DIR), "PATH": "/usr/bin:/bin"}
     return subprocess.run(
         [sys.executable, "-m", "pwnpet_cli", *args],
-        capture_output=True, text=True, env=env, check=False, timeout=timeout,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+        timeout=timeout,
     )
 
 
@@ -74,8 +78,9 @@ def badge_addr():
     Returns the MAC address string (e.g. 'DC:32:62:8D:E1:09'). Each test
     passes this to its own `pwnpet <cmd> -t <addr>` subprocess call.
     """
-    proc = run_cli(["scan", "--raw", "--timeout", str(SCAN_TIMEOUT)],
-                   timeout=SCAN_TIMEOUT + 6)
+    proc = run_cli(
+        ["scan", "--raw", "--timeout", str(SCAN_TIMEOUT)], timeout=SCAN_TIMEOUT + 6
+    )
     if proc.returncode != 0:
         pytest.skip(f"pwnpet scan failed (rc={proc.returncode}): {proc.stderr.strip()}")
     addr = None
@@ -86,8 +91,13 @@ def badge_addr():
             break
     if addr is None:
         pytest.skip(f"no PwnPet badge found in {SCAN_TIMEOUT}s scan window")
-    subprocess.run(["bluetoothctl", "disconnect", addr],
-                   capture_output=True, text=True, timeout=5.0, check=False)
+    subprocess.run(
+        ["bluetoothctl", "disconnect", addr],
+        capture_output=True,
+        text=True,
+        timeout=5.0,
+        check=False,
+    )
     return addr
 
 
@@ -100,10 +110,18 @@ def test_status_reads_all_seven_fields(badge_addr):
     proc = run_cli(["status", "-t", badge_addr])
     assert proc.returncode == 0, f"status rc={proc.returncode}, stderr={proc.stderr!r}"
     for label in (
-        "species", "name", "happiness", "hungry", "health",
-        "state", "sensor_value", "all_missions_done",
+        "species",
+        "name",
+        "happiness",
+        "hungry",
+        "health",
+        "state",
+        "sensor_value",
+        "all_missions_done",
     ):
-        assert label in proc.stdout, f"label {label!r} missing from status output:\n{proc.stdout}"
+        assert (
+            label in proc.stdout
+        ), f"label {label!r} missing from status output:\n{proc.stdout}"
 
 
 def test_feed_grows_happiness(badge_addr):
@@ -136,15 +154,17 @@ def test_play_correct_magic_returns_notify(badge_addr):
     if proc.returncode == 5:
         pytest.skip("badge did not notify within 3s window — firmware-side timing")
     assert proc.returncode == 0, f"play rc={proc.returncode}, stderr={proc.stderr!r}"
-    assert re.search(r"^[0-9a-fA-F]{16}$", proc.stdout.strip(), re.MULTILINE), \
-        f"no 16-hex-char line in stdout: {proc.stdout!r}"
+    assert re.search(
+        r"^[0-9a-fA-F]{16}$", proc.stdout.strip(), re.MULTILINE
+    ), f"no 16-hex-char line in stdout: {proc.stdout!r}"
 
 
 def test_play_wrong_magic_times_out(badge_addr):
     """play 0x12345678 exits 5 (NotifyTimeoutError per F8 spec §8)."""
     proc = run_cli(["play", "0x12345678", "-t", badge_addr], timeout=PLAY_TIMEOUT_S)
-    assert proc.returncode == 5, \
-        f"expected rc=5 (notify timeout), got rc={proc.returncode}, stderr={proc.stderr!r}"
+    assert (
+        proc.returncode == 5
+    ), f"expected rc=5 (notify timeout), got rc={proc.returncode}, stderr={proc.stderr!r}"
 
 
 def test_watch_emits_multiple_samples(badge_addr):
@@ -153,12 +173,28 @@ def test_watch_emits_multiple_samples(badge_addr):
     Sends SIGINT (not SIGTERM) so the CLI's KeyboardInterrupt handler
     in read_cmd.py runs and flushes stdout. Sets PYTHONUNBUFFERED=1
     so child print() output is line-buffered into the pipe."""
-    env = {"PYTHONPATH": str(SCRIPTS_DIR), "PATH": "/usr/bin:/bin",
-           "PYTHONUNBUFFERED": "1"}
+    env = {
+        "PYTHONPATH": str(SCRIPTS_DIR),
+        "PATH": "/usr/bin:/bin",
+        "PYTHONUNBUFFERED": "1",
+    }
     proc = subprocess.Popen(
-        [sys.executable, "-m", "pwnpet_cli", "read", "--watch", "sensor_value",
-         "--interval", str(WATCH_INTERVAL_S), "-t", badge_addr],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env,
+        [
+            sys.executable,
+            "-m",
+            "pwnpet_cli",
+            "read",
+            "--watch",
+            "sensor_value",
+            "--interval",
+            str(WATCH_INTERVAL_S),
+            "-t",
+            badge_addr,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
     )
     try:
         time.sleep(WATCH_WALL_S)
@@ -167,7 +203,7 @@ def test_watch_emits_multiple_samples(badge_addr):
     except subprocess.TimeoutExpired:
         proc.kill()
         out, err = proc.communicate()
-    sample_lines = [ln for ln in out.splitlines()
-                    if ln.strip().lstrip("-").isdigit()]
-    assert len(sample_lines) >= 3, \
-        f"expected ≥3 sample lines in {WATCH_WALL_S}s, got {len(sample_lines)}; stdout={out!r}; stderr={err!r}"
+    sample_lines = [ln for ln in out.splitlines() if ln.strip().lstrip("-").isdigit()]
+    assert (
+        len(sample_lines) >= 3
+    ), f"expected ≥3 sample lines in {WATCH_WALL_S}s, got {len(sample_lines)}; stdout={out!r}; stderr={err!r}"

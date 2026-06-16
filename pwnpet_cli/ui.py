@@ -12,10 +12,10 @@ err_console = Console(stderr=True)
 
 # State name → Rich style, shared with scan_cmd.
 STATE_STYLE: dict[str, str] = {
-    "temeroso":   "yellow",
-    "curioso":    "green",
-    "leal":       "blue",
-    "paranoia":   "bold red",
+    "temeroso": "yellow",
+    "curioso": "green",
+    "leal": "blue",
+    "paranoia": "bold red",
     "hambriento": "bold magenta",
 }
 
@@ -30,15 +30,15 @@ def _fmt_value(key: str, val: object) -> str:
         try:
             n = int(s)
             if n >= 900:
-                color = "bold red"      # gordito2 — very overfed
+                color = "bold red"  # gordito2 — very overfed
             elif n >= 750:
-                color = "bold yellow"   # gordito1 — moderately overfed
+                color = "bold yellow"  # gordito1 — moderately overfed
             elif n >= 600:
-                color = "yellow"        # gordito0 — lightly overfed
+                color = "yellow"  # gordito0 — lightly overfed
             elif n >= 300:
-                color = "green"         # normal hunger range
+                color = "green"  # normal hunger range
             else:
-                color = "red"           # too hungry
+                color = "red"  # too hungry
             return f"[{color}]{n} / 1000[/]"
         except ValueError:
             pass
@@ -67,26 +67,29 @@ def print_help(creature_dead: bool = False) -> None:
     t = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
     t.add_column(style="cyan", no_wrap=True)
     t.add_column(style="dim")
-    t.add_row("feed",                       "Feed the badge")
-    t.add_row("pet",                        "Pet the badge")
-    t.add_row("play <hex>",                 "Write u32 magic, read flag")
-    t.add_row("rename <name>",              "Change the pet's name (max 16 bytes)")
-    t.add_row("status",                     "Read all public state")
-    t.add_row("passkey <digits>",           "Submit 3-digit passkey (e.g. 163)")
-    t.add_row("missions",                   "List missions and completion status")
-    t.add_row("missions [--hint] <id>",     "Show hint for a specific mission")
-    t.add_row("flag <id>",                  "Read the flag for a completed mission")
-    t.add_row("friendship list",                "Show friend list")
-    t.add_row("friendship count",               "Show number of friends")
-    t.add_row("friendship remove <addr>",       "Remove a friend (AA:BB:CC:DD:EE:FF)")
-    t.add_row("friendship block <addr>",        "Block a badge from future prompts")
-    t.add_row("friendship proximity [on|off]",  "Query or toggle proximity detection")
-    t.add_row("read <name|0xNNNN>",         "Read a characteristic by name or short UUID")
-    t.add_row("write <name|0xNNNN> <hex>",  "Write hex bytes to a characteristic")
+    t.add_row("feed", "Feed the badge")
+    t.add_row("pet", "Pet the badge")
+    t.add_row("play <hex>", "Write u32 magic, read flag")
+    t.add_row("rename <name>", "Change the pet's name (max 16 bytes)")
+    t.add_row("status", "Read all public state")
+    t.add_row("passkey <digits>", "Submit 3-digit passkey (e.g. 163)")
+    t.add_row("missions", "List missions and completion status")
+    t.add_row("missions [--hint] <id>", "Show hint for a specific mission")
+    t.add_row("flag <id>", "Read the flag for a completed mission")
+    t.add_row("friendship list", "Show friend list")
+    t.add_row("friendship count", "Show number of friends")
+    t.add_row("friendship remove <addr>", "Remove a friend (AA:BB:CC:DD:EE:FF)")
+    t.add_row("friendship block <addr>", "Block a badge from future prompts")
+    t.add_row("friendship proximity [on|off]", "Query or toggle proximity detection")
+    t.add_row("read <name|0xNNNN>", "Read a characteristic by name or short UUID")
+    t.add_row("write <name|0xNNNN> <hex>", "Write hex bytes to a characteristic")
     if creature_dead:
-        t.add_row("arise",                  "Your pet is dead. Delete everything and pretend it never happened.")
-    t.add_row("help",                       "Show this help")
-    t.add_row("exit / quit",               "Disconnect and exit")
+        t.add_row(
+            "arise",
+            "Your pet is dead. Delete everything and pretend it never happened.",
+        )
+    t.add_row("help", "Show this help")
+    t.add_row("exit / quit", "Disconnect and exit")
     console.print(t)
 
 
@@ -136,7 +139,9 @@ def print_scan_results(hits: list, raw: bool = False) -> None:
 
     for hit in hits:
         species_str = (
-            chars.render_species_id(hit.species_id) if hit.species_id is not None else "?"
+            chars.render_species_id(hit.species_id)
+            if hit.species_id is not None
+            else "?"
         )
         state_str = fmt.render_state(hit.state) if hit.state is not None else "?"
         state_cell = f"[{STATE_STYLE.get(state_str, 'white')}]{state_str}[/]"

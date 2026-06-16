@@ -30,7 +30,6 @@ def render_u16_le(b: bytes) -> int:
     return int.from_bytes(b, "little")
 
 
-
 def render_utf8(b: bytes) -> str:
     """UTF-8 with trailing NULs stripped (badge name field convention)."""
     return b.rstrip(b"\x00").decode("utf-8", errors="replace")
@@ -64,16 +63,15 @@ def parse_mission_list(raw: bytes) -> list[tuple[int, bool]]:
 # Field display order + label formatting for `status` (spec §7).
 # Public so ui.py can iterate without duplicating the list.
 STATUS_FIELDS: list[tuple[str, str]] = [
-    ("species_id",        "species"),
-    ("name",              "name"),
-    ("happiness",         "happiness"),
-    ("hungry",            "hungry"),
-    ("health",            "health"),
-    ("state",             "state"),
-    ("xp",                "xp"),
-    ("sensor_value",      "sensor_value"),
+    ("species_id", "species"),
+    ("name", "name"),
+    ("happiness", "happiness"),
+    ("hungry", "hungry"),
+    ("health", "health"),
+    ("state", "state"),
+    ("xp", "xp"),
+    ("sensor_value", "sensor_value"),
     ("all_missions_done", "all_missions_done"),
 ]
 
 RANGED_FIELDS: frozenset[str] = frozenset({"happiness", "hungry", "health"})
-

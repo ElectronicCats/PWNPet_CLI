@@ -14,7 +14,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     inner.required = True
 
     p_set = inner.add_parser("set", help="Set target by MAC or local name.")
-    p_set.add_argument("addr_or_name", help="MAC (AA:BB:CC:DD:EE:FF) or name (PwnPet_XXXX).")
+    p_set.add_argument(
+        "addr_or_name", help="MAC (AA:BB:CC:DD:EE:FF) or name (PwnPet_XXXX)."
+    )
     p_set.set_defaults(handler=run_set)
 
     p_show = inner.add_parser("show", help="Print current target.")
@@ -28,7 +30,9 @@ def _looks_like_mac(s: str) -> bool:
     parts = s.split(":")
     if len(parts) != 6:
         return False
-    return all(len(p) == 2 and all(c in "0123456789abcdefABCDEF" for c in p) for p in parts)
+    return all(
+        len(p) == 2 and all(c in "0123456789abcdefABCDEF" for c in p) for p in parts
+    )
 
 
 async def run_set(args: argparse.Namespace) -> int:

@@ -12,7 +12,9 @@ _MAX_NAME_BYTES = 16
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("rename", help="Change the pet's name (max 16 bytes).")
+    parser = subparsers.add_parser(
+        "rename", help="Change the pet's name (max 16 bytes)."
+    )
     parser.add_argument("name", help="New name for the badge pet.")
     add_target_arg(parser)
     parser.set_defaults(handler=run)
@@ -23,7 +25,9 @@ async def execute(conn: transport.Connection, name: str) -> None:
     if len(payload) == 0:
         raise UsageError("name cannot be empty")
     if len(payload) > _MAX_NAME_BYTES:
-        raise UsageError(f"name too long: {len(payload)} bytes (max {_MAX_NAME_BYTES} UTF-8 bytes)")
+        raise UsageError(
+            f"name too long: {len(payload)} bytes (max {_MAX_NAME_BYTES} UTF-8 bytes)"
+        )
     await conn.write(chars.NAME_TO_UUID["rename"], payload)
     name_bytes = await conn.read(chars.NAME_TO_UUID["name"])
     confirmed = name_bytes.rstrip(b"\x00").decode("utf-8", errors="replace")

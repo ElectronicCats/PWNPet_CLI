@@ -39,7 +39,9 @@ class ScanHit:
     name: str | None
     species_id: int | None
     state: int | None
-    manuf_data: bytes  # re-assembled wire form: CID LE + manuf payload; b"" if not present
+    manuf_data: (
+        bytes  # re-assembled wire form: CID LE + manuf payload; b"" if not present
+    )
     device: BLEDevice  # bleak handle for direct connect (avoids find_device_by_address roundtrip)
 
 
@@ -68,6 +70,7 @@ async def scan(timeout: float = 5.0, all_devices: bool = False) -> list[ScanHit]
     stacks that report scan response packets to the callback before the main
     adv packet (e.g. some BlueZ versions on Linux)."""
     from bleak import BleakScanner  # noqa: PLC0415
+
     found: dict[str, ScanHit] = {}
 
     def cb(device: BLEDevice, adv: AdvertisementData) -> None:
@@ -89,7 +92,11 @@ async def scan(timeout: float = 5.0, all_devices: bool = False) -> list[ScanHit]
         found[device.address] = ScanHit(
             addr=device.address,
             name=adv.local_name or device.name or (prev.name if prev else None),
-            species_id=species_id if species_id is not None else (prev.species_id if prev else None),
+            species_id=(
+                species_id
+                if species_id is not None
+                else (prev.species_id if prev else None)
+            ),
             state=state if state is not None else (prev.state if prev else None),
             manuf_data=manuf if manuf else (prev.manuf_data if prev else b""),
             device=device,
@@ -138,6 +145,7 @@ async def _find_device(addr: str, timeout: float = 15.0) -> BLEDevice:
     5s misses them on cold cache (BlueZ flushed).
     """
     from bleak import BleakScanner  # noqa: PLC0415
+
     ui.err_console.print(f"Searching for device {addr}...")
     device = await BleakScanner.find_device_by_address(addr, timeout=timeout)
     if device is None:
@@ -172,9 +180,12 @@ class Connection:
 
     async def __aenter__(self) -> "Connection":
         from bleak import BleakClient  # noqa: PLC0415
+
         if self._device is None:
             try:
-                self._device = await _find_device(self._addr, timeout=self._scan_timeout)
+                self._device = await _find_device(
+                    self._addr, timeout=self._scan_timeout
+                )
             except CliError:
                 raise
             except Exception as exc:
@@ -188,10 +199,14 @@ class Connection:
                 # connection, then re-scan for a fresh D-Bus device handle.
                 # The handle from the previous attempt may be stale if BlueZ
                 # removed the device object after the prior scan stopped.
-                ui.err_console.print(f"Connection lost. Retrying ({attempt}/{_MAX_ATTEMPTS - 1})...")
+                ui.err_console.print(
+                    f"Connection lost. Retrying ({attempt}/{_MAX_ATTEMPTS - 1})..."
+                )
                 await asyncio.sleep(2.0)
                 try:
-                    self._device = await _find_device(self._addr, timeout=self._scan_timeout)
+                    self._device = await _find_device(
+                        self._addr, timeout=self._scan_timeout
+                    )
                 except Exception:
                     pass  # keep existing device handle; attempt will likely fail too
             else:
@@ -211,7 +226,9 @@ class Connection:
                     await self._client.disconnect()
                 except Exception:
                     pass
-        raise ConnectionFailedError(f"connect to {self._addr}: {last_exc}") from last_exc
+        raise ConnectionFailedError(
+            f"connect to {self._addr}: {last_exc}"
+        ) from last_exc
 
     async def __aexit__(self, *_: object) -> None:
         if self._client is None:
@@ -256,7 +273,9 @@ class Connection:
         All-zeros result → wrong magic → NotifyTimeoutError (rc=5, spec §8).
         """
         await self.write(PLAY_CHAR, magic)
-        await asyncio.sleep(0.1)  # firmware compute is synchronous; settle bleak round-trip
+        await asyncio.sleep(
+            0.1
+        )  # firmware compute is synchronous; settle bleak round-trip
         raw = await self.read(NOTIFY_FLAG_CHAR)
         if all(b == 0 for b in raw):
             raise NotifyTimeoutError("0xC0FF read returned zeros — wrong magic")

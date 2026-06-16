@@ -11,11 +11,30 @@ from . import add_target_arg, resolve_target
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("read", help="Read a characteristic by name or UUID.")
-    parser.add_argument("char", metavar="<name|uuid>", help="Public name (e.g. happiness) or 0xNNNN UUID.")
-    parser.add_argument("--watch", action="store_true", help="Loop and re-read every --interval seconds.")
-    parser.add_argument("--interval", type=float, default=1.0, help="Watch interval seconds (default 1.0).")
-    parser.add_argument("--passkey", metavar="<digits>", help="Write 3 BCD passkey then read in same connection.")
+    parser = subparsers.add_parser(
+        "read", help="Read a characteristic by name or UUID."
+    )
+    parser.add_argument(
+        "char",
+        metavar="<name|uuid>",
+        help="Public name (e.g. happiness) or 0xNNNN UUID.",
+    )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Loop and re-read every --interval seconds.",
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Watch interval seconds (default 1.0).",
+    )
+    parser.add_argument(
+        "--passkey",
+        metavar="<digits>",
+        help="Write 3 BCD passkey then read in same connection.",
+    )
     add_target_arg(parser)
     parser.set_defaults(handler=run)
 
@@ -33,7 +52,9 @@ async def run(args: argparse.Namespace) -> int:
     try:
         uuid = chars.resolve(args.char)
     except KeyError:
-        raise UsageError(f"unknown char {args.char!r} (use a public name or 0xNNNN UUID)")
+        raise UsageError(
+            f"unknown char {args.char!r} (use a public name or 0xNNNN UUID)"
+        )
 
     if args.watch and args.passkey:
         raise UsageError("--watch and --passkey are mutually exclusive")

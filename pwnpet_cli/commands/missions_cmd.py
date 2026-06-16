@@ -19,7 +19,6 @@ from ._ops import fetch_mission_hint, fetch_missions
 #                  done == 1 means completed
 
 
-
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "missions",
