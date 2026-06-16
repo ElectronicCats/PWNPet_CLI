@@ -96,7 +96,7 @@ DECODERS: dict[str, object] = {
     "health":            fmt.render_u16_le,
     "state":             lambda b: fmt.render_state(b[0] if b else 0),
     "xp":                fmt.render_u16_le,
-    "sensor_value":      fmt.render_u32_le,
+    "sensor_value":      fmt.render_u16_le,
     "dream_log":         fmt.render_utf8,
     "all_missions_done": fmt.render_bool,
 }

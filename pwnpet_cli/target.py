@@ -47,14 +47,3 @@ def clear() -> None:
         TARGET_FILE.unlink()
     except FileNotFoundError:
         pass
-
-
-def format_for_show() -> str:
-    """Render the stored target for `pwnpet target show`."""
-    loaded = load()
-    if loaded is None:
-        return "(none)"
-    addr, name = loaded
-    if name:
-        return f"{name}   {addr}"
-    return addr

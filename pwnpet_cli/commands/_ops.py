@@ -25,7 +25,7 @@ async def fetch_status(conn: transport.Connection) -> dict[str, object]:
         "health":            fmt.render_u16_le(health_b),
         "state":             fmt.render_state(state_b[0] if state_b else 0),
         "xp":                fmt.render_u16_le(xp_b),
-        "sensor_value":      fmt.render_u32_le(sensor_b),
+        "sensor_value":      fmt.render_u16_le(sensor_b),
         "all_missions_done": fmt.render_bool(done_b),
     }
 
