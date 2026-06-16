@@ -141,22 +141,10 @@ async def _dispatch_friendship(conn: transport.Connection, argv: list[str]) -> N
         )
 
 
-async def _cmd_feed(conn: transport.Connection, argv: list[str]) -> None:
-    await feed_cmd.execute(conn)
-
-
-async def _cmd_pet(conn: transport.Connection, argv: list[str]) -> None:
-    await pet_cmd.execute(conn)
-
-
 async def _cmd_play(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("play requires a hex argument (e.g. 0xAABBCCDD)")
     await play_cmd.execute(conn, argv[0])
-
-
-async def _cmd_status(conn: transport.Connection, argv: list[str]) -> None:
-    await status_cmd.execute(conn)
 
 
 async def _cmd_rename(conn: transport.Connection, argv: list[str]) -> None:
@@ -184,13 +172,8 @@ async def _cmd_write(conn: transport.Connection, argv: list[str]) -> None:
 
 
 async def _cmd_missions(conn: transport.Connection, argv: list[str]) -> None:
-    _parser = argparse.ArgumentParser(prog="missions", add_help=False, exit_on_error=False)
-    _parser.add_argument("--hint", metavar="<id>", type=int)
-    try:
-        ns = _parser.parse_args(argv)
-    except (argparse.ArgumentError, SystemExit) as exc:
-        raise UsageError(f"missions: {exc}")
-    await missions_cmd.execute(conn, ns.hint)
+    hint = int(argv[1]) if len(argv) >= 2 and argv[0] == "--hint" else None
+    await missions_cmd.execute(conn, hint)
 
 
 async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
@@ -203,11 +186,16 @@ async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
     await flag_cmd.execute(conn, mid)
 
 
+def _no_args(fn):
+    async def _w(conn, _): await fn(conn)
+    return _w
+
+
 _DISPATCH_TABLE = {
-    "feed":       _cmd_feed,
-    "pet":        _cmd_pet,
+    "feed":       _no_args(feed_cmd.execute),
+    "pet":        _no_args(pet_cmd.execute),
     "play":       _cmd_play,
-    "status":     _cmd_status,
+    "status":     _no_args(status_cmd.execute),
     "rename":     _cmd_rename,
     "passkey":    _cmd_passkey,
     "read":       _cmd_read,
