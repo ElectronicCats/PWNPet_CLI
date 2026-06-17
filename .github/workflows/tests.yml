@@ -9,7 +9,7 @@ on:
       - "tests/**"
       - ".github/workflows/tests.yml"
   pull_request:
-    branches: ["main", "develop", "refactor"]
+    branches: ["main", "dev"]
     paths:
       - "pwnpet_cli/**"
       - "tests/**"
