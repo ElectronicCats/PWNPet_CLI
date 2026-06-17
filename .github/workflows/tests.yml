@@ -2,7 +2,7 @@ name: PWNPet CLI Unit Tests
 
 on:
   push:
-    branches: ["main", "develop", "refactor"]
+    branches: ["main", "dev"]
     # Only trigger if there are changes in pwnpet_cli/, tests/ or the test workflow itself
     paths:
       - "pwnpet_cli/**"
