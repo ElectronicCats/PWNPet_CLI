@@ -87,8 +87,9 @@ class TestParseManufData:
 class TestScan:
     def _run_scan(self, packets, **kwargs):
         FakeScanner.packets = packets
-        with patch("bleak.BleakScanner", FakeScanner), patch(
-            "asyncio.sleep", new=AsyncMock()
+        with (
+            patch("bleak.BleakScanner", FakeScanner),
+            patch("asyncio.sleep", new=AsyncMock()),
         ):
             return run(transport.scan(**kwargs))
 
@@ -152,8 +153,9 @@ class TestScan:
             async def __aenter__(self):
                 raise RuntimeError("dbus exploded")
 
-        with patch("bleak.BleakScanner", BoomScanner), patch(
-            "asyncio.sleep", new=AsyncMock()
+        with (
+            patch("bleak.BleakScanner", BoomScanner),
+            patch("asyncio.sleep", new=AsyncMock()),
         ):
             with pytest.raises(ConnectionFailedError):
                 run(transport.scan())
@@ -199,18 +201,24 @@ class TestResolveNameToDevice:
 class TestFindDevice:
     def test_returns_device_when_found(self):
         device = make_device()
-        with patch(
-            "bleak.BleakScanner.find_device_by_address",
-            new=AsyncMock(return_value=device),
-        ), patch("asyncio.sleep", new=AsyncMock()):
+        with (
+            patch(
+                "bleak.BleakScanner.find_device_by_address",
+                new=AsyncMock(return_value=device),
+            ),
+            patch("asyncio.sleep", new=AsyncMock()),
+        ):
             result = run(transport._find_device(device.address))
         assert result is device
 
     def test_raises_connection_failed_when_not_found(self):
-        with patch(
-            "bleak.BleakScanner.find_device_by_address",
-            new=AsyncMock(return_value=None),
-        ), patch("asyncio.sleep", new=AsyncMock()):
+        with (
+            patch(
+                "bleak.BleakScanner.find_device_by_address",
+                new=AsyncMock(return_value=None),
+            ),
+            patch("asyncio.sleep", new=AsyncMock()),
+        ):
             with pytest.raises(ConnectionFailedError):
                 run(transport._find_device("AA:BB:CC:DD:EE:FF"))
 
@@ -243,8 +251,9 @@ class TestConnection:
     def test_resolves_string_address_via_find_device(self):
         device = make_device()
         client = make_fake_client()
-        with patch("bleak.BleakClient", return_value=client), patch.object(
-            transport, "_find_device", new=AsyncMock(return_value=device)
+        with (
+            patch("bleak.BleakClient", return_value=client),
+            patch.object(transport, "_find_device", new=AsyncMock(return_value=device)),
         ):
 
             async def go():
@@ -257,12 +266,10 @@ class TestConnection:
         device = make_device()
         flaky_client = make_fake_client(connect_side_effect=RuntimeError("nope"))
         good_client = make_fake_client()
-        with patch(
-            "bleak.BleakClient", side_effect=[flaky_client, good_client]
-        ), patch.object(
-            transport, "_find_device", new=AsyncMock(return_value=device)
-        ), patch(
-            "asyncio.sleep", new=AsyncMock()
+        with (
+            patch("bleak.BleakClient", side_effect=[flaky_client, good_client]),
+            patch.object(transport, "_find_device", new=AsyncMock(return_value=device)),
+            patch("asyncio.sleep", new=AsyncMock()),
         ):
 
             async def go():
@@ -276,10 +283,13 @@ class TestConnection:
 
     def test_exhausts_retries_raises_connection_failed(self):
         device = make_device()
-        with patch(
-            "bleak.BleakClient",
-            return_value=make_fake_client(connect_side_effect=RuntimeError("nope")),
-        ), patch("asyncio.sleep", new=AsyncMock()):
+        with (
+            patch(
+                "bleak.BleakClient",
+                return_value=make_fake_client(connect_side_effect=RuntimeError("nope")),
+            ),
+            patch("asyncio.sleep", new=AsyncMock()),
+        ):
 
             async def go():
                 async with transport.Connection(device):
@@ -330,8 +340,9 @@ class TestPlayReadFlag:
         device = make_device()
         client = make_fake_client()
         client.read_gatt_char = AsyncMock(return_value=bytearray(b"PWNPET{ok}"))
-        with patch("bleak.BleakClient", return_value=client), patch(
-            "asyncio.sleep", new=AsyncMock()
+        with (
+            patch("bleak.BleakClient", return_value=client),
+            patch("asyncio.sleep", new=AsyncMock()),
         ):
 
             async def go():
@@ -348,8 +359,9 @@ class TestPlayReadFlag:
         device = make_device()
         client = make_fake_client()
         client.read_gatt_char = AsyncMock(return_value=bytearray(b"\x00\x00\x00\x00"))
-        with patch("bleak.BleakClient", return_value=client), patch(
-            "asyncio.sleep", new=AsyncMock()
+        with (
+            patch("bleak.BleakClient", return_value=client),
+            patch("asyncio.sleep", new=AsyncMock()),
         ):
 
             async def go():

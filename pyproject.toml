@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pwnpet-cli"
+dynamic = ["version"]
+description = "BLE toolkit for the PwnPet badge."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = [
+    "bleak>=0.22",
+    "rich>=13.0",
+]
+
+[project.scripts]
+pwnpet = "pwnpet_cli.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "pwnpet_cli.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pwnpet_cli*"]
