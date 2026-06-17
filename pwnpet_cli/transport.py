@@ -1,8 +1,8 @@
 """Bleak wrapper. Thin async helpers for scan/connect/read/write/notify.
 
-Per spec architecture γ, this module is NOT host-tested in v0.1.
-Verification comes from scripts/pwnpet_cli_smoke.py against a real
-badge.
+Host-tested in tests/test_transport.py with BleakScanner/BleakClient
+mocked. pwnpet_cli_smoke.py remains the source of truth for behavior
+against real hardware (timing, BlueZ quirks, etc. that mocks can't cover).
 """
 
 from __future__ import annotations
