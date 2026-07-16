@@ -35,6 +35,19 @@ class TestRenderSpeciesId:
         assert chars.render_species_id(0x9999) == "0x9999 (unknown)"
 
 
+class TestOwnerName:
+    def test_owner_name_read_uuid(self):
+        assert chars.resolve("owner_name") == "0000fe09-0000-1000-8000-00805f9b34fb"
+
+    def test_set_owner_write_uuid(self):
+        assert chars.resolve("set_owner") == "0000c009-0000-1000-8000-00805f9b34fb"
+
+    def test_owner_name_decoder_is_utf8(self):
+        # Accented name round-trips through the UTF-8 decoder.
+        decoded = chars.DECODERS["owner_name"]("Jos\xe9".encode("utf-8") + b"\x00\x00")
+        assert decoded == "Jos\xe9"
+
+
 class TestDecodersConsistency:
     def test_decoders_keys_subset_of_name_to_uuid(self):
         assert set(chars.DECODERS.keys()) <= set(chars.NAME_TO_UUID.keys())
