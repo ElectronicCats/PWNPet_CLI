@@ -175,6 +175,7 @@ All commands are typed at the `(pwnpet)` prompt. Type `help` at any time to see 
 | `pet` | Pet the badge. Raises happiness and grants a small amount of XP. |
 | `play <hex>` | Play with the badge by writing a 32-bit magic value and reading the response. Certain values produce special reactions and are part of the challenges. |
 | `rename <name>` | Change the creature's name (maximum 16 UTF-8 bytes). |
+| `owner [<name>]` | Read (no argument) or set the **badge holder's** name — the person wearing the badge, distinct from the pet's name. Maximum 20 UTF-8 bytes. |
 
 Examples:
 ```
@@ -184,6 +185,10 @@ ok
 ok
 (pwnpet) rename MyLlama
 name: MyLlama
+(pwnpet) owner Ada Lovelace
+owner: Ada Lovelace
+(pwnpet) owner
+owner: Ada Lovelace
 ```
 
 ### Status & information
