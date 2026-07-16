@@ -28,6 +28,7 @@ NAME_TO_UUID: dict[str, str] = {
     "xp": _u16(0xFE06),
     "health": _u16(0xFE07),
     "mission_list": _u16(0xFE08),
+    "owner_name": _u16(0xFE09),  # badge holder's name (the human)
     # DE0X — Core (R, public bool only)
     "all_missions_done": _u16(0xDE02),
     # FA0X — Habilidad (R, public sensor only)
@@ -43,6 +44,7 @@ NAME_TO_UUID: dict[str, str] = {
     "mission_hint": _u16(0xC006),
     "factory_reset": _u16(0xC007),
     "friendship_cmd": _u16(0xC008),  # R+W: write FRIENDSHIP_BLE_* opcode, read result
+    "set_owner": _u16(0xC009),  # W: badge holder's name (0..20 UTF-8; 0 = clear)
     # Memoria input (W)
     "passkey_input": _u16(0x5E02),
 }
@@ -98,6 +100,7 @@ DECODERS: dict[str, object] = {
     "health": fmt.render_u16_le,
     "state": lambda b: fmt.render_state(b[0] if b else 0),
     "xp": fmt.render_u16_le,
+    "owner_name": fmt.render_utf8,
     "sensor_value": fmt.render_u16_le,
     "dream_log": fmt.render_utf8,
     "all_missions_done": fmt.render_bool,

@@ -63,6 +63,7 @@ def parse_mission_list(raw: bytes) -> list[tuple[int, bool]]:
 # Field display order + label formatting for `status` (spec §7).
 # Public so ui.py can iterate without duplicating the list.
 STATUS_FIELDS: list[tuple[str, str]] = [
+    ("owner_name", "owner"),
     ("species_id", "species"),
     ("name", "name"),
     ("happiness", "happiness"),
