@@ -7,7 +7,8 @@ from .. import chars, format as fmt, transport
 
 
 async def fetch_status(conn: transport.Connection) -> dict[str, object]:
-    """Read and decode all 9 public status characteristics."""
+    """Read and decode all 10 public status characteristics."""
+    owner_b = await conn.read(chars.NAME_TO_UUID["owner_name"])
     species_b = await conn.read(chars.NAME_TO_UUID["species_id"])
     name_b = await conn.read(chars.NAME_TO_UUID["name"])
     happy_b = await conn.read(chars.NAME_TO_UUID["happiness"])
@@ -18,6 +19,7 @@ async def fetch_status(conn: transport.Connection) -> dict[str, object]:
     sensor_b = await conn.read(chars.NAME_TO_UUID["sensor_value"])
     done_b = await conn.read(chars.NAME_TO_UUID["all_missions_done"])
     return {
+        "owner_name": fmt.render_utf8(owner_b),
         "species_id": chars.render_species_id(fmt.render_u16_le(species_b)),
         "name": fmt.render_utf8(name_b),
         "happiness": fmt.render_u16_le(happy_b),
