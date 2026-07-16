@@ -19,6 +19,7 @@ from . import (
     feed_cmd,
     flag_cmd,
     missions_cmd,
+    owner_cmd,
     passkey_cmd,
     pet_cmd,
     play_cmd,
@@ -161,6 +162,13 @@ async def _cmd_rename(conn: transport.Connection, argv: list[str]) -> None:
     await rename_cmd.execute(conn, argv[0])
 
 
+async def _cmd_owner(conn: transport.Connection, argv: list[str]) -> None:
+    # No argv → read; otherwise join the words back into one name (session
+    # input is whitespace-split, and owner names may contain spaces).
+    name = " ".join(argv) if argv else None
+    await owner_cmd.execute(conn, name)
+
+
 async def _cmd_passkey(conn: transport.Connection, argv: list[str]) -> None:
     if not argv:
         raise UsageError("passkey requires exactly 3 digits (e.g. 163)")
@@ -207,6 +215,7 @@ _DISPATCH_TABLE = {
     "play": _cmd_play,
     "status": _no_args(status_cmd.execute),
     "rename": _cmd_rename,
+    "owner": _cmd_owner,
     "passkey": _cmd_passkey,
     "read": _cmd_read,
     "write": _cmd_write,

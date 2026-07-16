@@ -22,6 +22,7 @@ from .commands import (
     play_cmd,
     passkey_cmd,
     rename_cmd,
+    owner_cmd,
     session_cmd,
     missions_cmd,
     flag_cmd,
@@ -77,6 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
     play_cmd.add_parser(subparsers)
     passkey_cmd.add_parser(subparsers)
     rename_cmd.add_parser(subparsers)
+    owner_cmd.add_parser(subparsers)
     missions_cmd.add_parser(subparsers)
     flag_cmd.add_parser(subparsers)
     return parser

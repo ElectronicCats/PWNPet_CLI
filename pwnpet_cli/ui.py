@@ -22,6 +22,9 @@ STATE_STYLE: dict[str, str] = {
 
 def _fmt_value(key: str, val: object) -> str:
     s = str(val)
+    if key == "owner_name":
+        # Distinguish "no owner assigned" from a blank cell.
+        return s if s else "[dim](unset)[/]"
     if key == "state":
         return f"[{STATE_STYLE.get(s, 'white')}]{s}[/]"
     if key == "all_missions_done":
@@ -71,6 +74,7 @@ def print_help(creature_dead: bool = False) -> None:
     t.add_row("pet", "Pet the badge")
     t.add_row("play <hex>", "Write u32 magic, read flag")
     t.add_row("rename <name>", "Change the pet's name (max 16 bytes)")
+    t.add_row("owner [<name>]", "Read or set the badge holder's name (max 20 bytes)")
     t.add_row("status", "Read all public state")
     t.add_row("passkey <digits>", "Submit 3-digit passkey (e.g. 163)")
     t.add_row("missions", "List missions and completion status")
