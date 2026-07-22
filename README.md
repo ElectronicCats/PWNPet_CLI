@@ -15,11 +15,12 @@ PwnPet badges are virtual Tamagotchi-style pets that live on real hardware. Beyo
 3. [Command structure & quick start](#command-structure)
 4. [Interactive session commands](#interactive-session-commands)
 5. [Creature emotional states](#creature-emotional-states)
-6. [Physical badge controls](#physical-badge-controls)
-7. [CTF challenges (overview)](#ctf-challenges-overview)
-8. [Relationship between firmware and CLI](#relationship-between-firmware-and-cli)
-9. [CLI internal architecture (Python)](#cli-internal-architecture-python)
-10. [References: exit codes, BLE characteristics, and debugging](#references)
+6. [Names: owner vs. pet](#names-owner-vs-pet)
+7. [Physical badge controls](#physical-badge-controls)
+8. [CTF challenges (overview)](#ctf-challenges-overview)
+9. [Relationship between firmware and CLI](#relationship-between-firmware-and-cli)
+10. [CLI internal architecture (Python)](#cli-internal-architecture-python)
+11. [References: exit codes, BLE characteristics, and debugging](#references)
 
 ---
 
@@ -142,6 +143,7 @@ Upon connecting, the current badge state is displayed automatically:
 Connected to AA:BB:CC:DD:EE:1A.
 Type 'help' for available commands, 'exit' or Ctrl+D to disconnect.
 
+  owner:             Ada Lovelace
   species:           0x0002 (Pwn Cat)
   name:              Pwn Llama
   happiness:         450 / 1000
@@ -175,7 +177,7 @@ All commands are typed at the `(pwnpet)` prompt. Type `help` at any time to see 
 | `pet` | Pet the badge. Raises happiness and grants a small amount of XP. |
 | `play <hex>` | Play with the badge by writing a 32-bit magic value and reading the response. Certain values produce special reactions and are part of the challenges. |
 | `rename <name>` | Change the creature's name (maximum 16 UTF-8 bytes). |
-| `owner [<name>]` | Read (no argument) or set the **badge holder's** name — the person wearing the badge, distinct from the pet's name. Maximum 20 UTF-8 bytes. |
+| `owner [<name>]` | Read (no argument) or set the **badge holder's** name — the person wearing the badge, distinct from the pet's name. Maximum 20 UTF-8 bytes. Display it on the badge with a long press of `UP`; see [Names: owner vs. pet](#names-owner-vs-pet). |
 
 Examples:
 ```
@@ -306,6 +308,64 @@ The `hungry` field ranges from 0 to 1000. **The extremes are dangerous**: both c
 
 ---
 
+## Names: Owner vs. Pet
+
+The badge stores **two independent names**, and it is easy to confuse them:
+
+| Name | What it is | CLI command | Limit | Characteristics | Shown on the OLED by |
+|------|------------|-------------|-------|-----------------|----------------------|
+| **Owner** | The **human** wearing the badge — the primary datum of a conference badge | `owner [<name>]` | 20 UTF-8 bytes | read `owner_name` (`0xFE09`), write `set_owner` (`0xC009`) | **long-press `UP`** (full-screen card) |
+| **Pet** | The **creature's** name | `rename <name>` | 16 UTF-8 bytes | read `name` (`0xFE02`), write `rename` (`0xC004`) | **long-press `DOWN`** (top-right badge) |
+
+### Setting the owner name
+
+```
+(pwnpet) owner Ada Lovelace
+owner: Ada Lovelace
+(pwnpet) owner
+owner: Ada Lovelace
+```
+
+Outside a session, quote the name so it arrives as a single argument:
+
+```sh
+pwnpet owner "Ada Lovelace"
+pwnpet owner                    # read only
+```
+
+Behavior details, straight from the firmware:
+
+- **Limit of 20 UTF-8 bytes, no truncation.** The CLI rejects a longer name with a usage error before writing; the firmware also rejects the write (`ATT_ERR_INVALID_VALUE_SIZE`) instead of cutting it, so a multi-byte character is never split into invalid UTF-8. Accented names work — `José` is 5 bytes, not 4.
+- **Clearing it:** writing an empty payload clears the name (`write set_owner ""` / `pwnpet write 0xC009` with no bytes). An unset name is shown by the CLI as `(unset)` and by the OLED card as `(sin nombre)`.
+- **It survives the pet's death.** Unlike most creature mutations, `set_owner` is *not* gated on the death state — a blank badge in the middle of an event would be a visible bug. It is cleared only by a factory reset (`arise`).
+- **It is persisted** in the saved blob (`owner_name[20]` + length) and restored on boot, so it survives power cycles.
+- **It appears in `status`** as the first row (`owner:`).
+- A write forces an immediate OLED render, so the change shows up on screen without waiting for the next refresh tick.
+
+### Displaying the owner name on screen — long-press `UP`
+
+The owner name is **not** painted on the main screen on any panel size: the sprite keeps the full panel. To see it, **hold `UP` for ≥ 800 ms**. This toggles a full-screen **owner card**:
+
+- Press and hold `UP` → the sprite is replaced by the name, **centered on both axes**.
+- Hold `UP` again → back to the creature. It is a toggle, not a timed overlay: the card stays up until you toggle it off.
+- Names with spaces are broken at the space and stacked (`"Hola Mundo"` → `Hola` / `Mundo`), and the whole block is centered vertically.
+- The font is chosen automatically, largest first (10×20 → 7×13 → 6×10), falling back to packing several words per line if the name is too tall to stack one word per line. This is what makes a long name readable on a 128×32 panel.
+
+> **Note:** the rising edge of that same press already **pets** the creature (you'll see the `"Petted! +5xp"` overlay before the card appears). This is intentional — the long-press adds no new button edge, so button-pattern missions are unaffected by it.
+
+### Displaying the pet name on screen — long-press `DOWN`
+
+**Hold `DOWN` for ≥ 800 ms** to toggle the **pet-name badge** in the top-right corner:
+
+- Unlike the owner card, it **composes with the sprite** instead of replacing it: the creature stays visible underneath, and the bottom overlay bar keeps working.
+- Rendered right-aligned on the smallest font, over a cleared strip so the sprite doesn't bleed through the glyphs.
+- If no custom name has been set with `rename`, it shows the default `PwnPet`.
+- Same toggle semantics and the same "no new edge" property as `UP`: the rising edge already **fed** the creature (`"Fed! +25food"`) before the badge appears.
+
+Both toggles are reset to *off* whenever the animation layer is re-initialized (boot, factory reset).
+
+> The pet name also shapes the **BLE local name**: on boot the badge advertises as `PwnPet_<custom name>` when one is set, and falls back to `PwnPet_XXXX` (last 2 bytes of the chip UID in hex) otherwise. The change takes effect on the next boot.
+
 ---
 
 ## Physical Badge Controls
@@ -329,6 +389,18 @@ The reference badge (DojoCon 2026 Panama) has the following physical controls:
 | `DOWN` | **Feeds** the creature. Equivalent to the CLI `feed` command: sends a fixed portion, raises `hungry` and `happiness`. Shows `"Fed! +25food"`. Be careful not to overfeed. |
 | `LEFT` | Shows the `HAP` (happiness) and `HUN` (hunger) stats on the OLED for 4 seconds. |
 | `RIGHT` | Shows the `HP` (health) and `XP` stats on the OLED for 4 seconds. |
+
+> The exact overlay text depends on the panel: a 128×64 shows `"Petted! +5xp"` / `"Fed! +25food"` / `HAP:` `HUN:`, while a 128×32 uses the shortened `"Petted +5xp"` / `"+25food"` / `H:` `N:`.
+
+#### Long presses (hold ≥ 800 ms)
+
+| Button | Action |
+|--------|--------|
+| `UP` held | **Toggles the full-screen owner card** — the badge holder's name, centered. The only way to see it; the main screen never shows it. See [Names: owner vs. pet](#names-owner-vs-pet). |
+| `DOWN` held | **Toggles the pet-name badge** in the top-right corner, painted over the sprite (the creature stays visible). |
+| `LEFT` / `RIGHT` held | No long-press action of their own — holding both is the Friend Mode combo below. |
+
+A long press fires **once** while the button is still held (no release needed) and adds **no** extra button edge, so it never interferes with button-pattern missions. The rising edge that started the hold still performs the normal single-press action (pet on `UP`, feed on `DOWN`).
 
 #### Button combinations
 
@@ -404,6 +476,8 @@ pwnpet pet
 pwnpet play 0x........
 pwnpet passkey 163
 pwnpet rename MyLlama
+pwnpet owner "Ada Lovelace"            # set the badge holder's name
+pwnpet owner                           # read it back
 pwnpet missions
 pwnpet flag 2
 pwnpet read happiness
@@ -435,6 +509,7 @@ The firmware exposes its state and actions as **GATT characteristics**. The CLI 
 
 - Read game state → `status` groups several read-only characteristics (`0xFE0X`, `sensor_value`, `all_missions_done`).
 - Act on the creature → `feed`/`pet`/`play`/`rename` write to interaction characteristics (`0xC00X`).
+- Name the human → `owner <name>` writes `set_owner` (`0xC009`) and reads back `owner_name` (`0xFE09`) to confirm; the firmware pushes the new name to the display layer and forces a render on the spot.
 - Query missions → `missions` reads the list (`mission_list`, `0xFE08`), `--hint` reads `mission_hint` (`0xC006`), `flag` reads `mission_flag` (`0xC005`).
 - The `state` byte (`0xFE05`) is translated to a name/color according to the state table.
 
@@ -457,7 +532,7 @@ The CLI is written in Python 3.10+ and organized as a package under `pwnpet_cli/
 | `pwnpet_cli/format.py` | Raw-bytes-to-text rendering: LE integers, UTF-8, states, `render_bytes_smart` |
 | `pwnpet_cli/ui.py` | Terminal output with [Rich](https://github.com/Textualize/rich): `print_status`, `print_missions`, `print_help`, `ok`, `print_error` |
 | `pwnpet_cli/errors.py` | Typed exceptions with stable exit codes: `CliError` (base), `UsageError` (1), `TargetNotFoundError` (2), `ConnectionFailedError` (3), `GattError` (4), `NotifyTimeoutError` (5) |
-| `pwnpet_cli/commands/` | One module per CLI subcommand (`scan_cmd`, `target_cmd`, `status_cmd`, `read_cmd`, `write_cmd`, `feed_cmd`, `pet_cmd`, `play_cmd`, `passkey_cmd`, `rename_cmd`, `missions_cmd`, `flag_cmd`); each exposes `add_parser(subparsers)` and `run(args)` |
+| `pwnpet_cli/commands/` | One module per CLI subcommand (`scan_cmd`, `target_cmd`, `status_cmd`, `read_cmd`, `write_cmd`, `feed_cmd`, `pet_cmd`, `play_cmd`, `passkey_cmd`, `rename_cmd`, `owner_cmd`, `missions_cmd`, `flag_cmd`); each exposes `add_parser(subparsers)` and `run(args)`. `owner_cmd` also exposes `execute(conn, name)` so the session can reuse it |
 | `pwnpet_cli/commands/session_cmd.py` | Interactive REPL with an internal dispatch table (see below); also contains `_dispatch_friendship` — the `friendship` command is **not** a separate module |
 | `pwnpet_cli/commands/_ops.py` | Reusable async operations: `fetch_status`, `fetch_missions`, `fetch_flag`, `fetch_mission_hint` |
 | `pwnpet_cli/commands/_shared.py` | Shared GATT response decoding helpers: `decode(name_or_uuid, raw)` and `print_decoded(value)` (highlights `PWNPET{...}` flags in yellow) |
@@ -481,6 +556,7 @@ _DISPATCH_TABLE = {
     "play":       _cmd_play,
     "status":     _cmd_status,
     "rename":     _cmd_rename,
+    "owner":      _cmd_owner,
     "passkey":    _cmd_passkey,
     "read":       _cmd_read,
     "write":      _cmd_write,
@@ -489,6 +565,8 @@ _DISPATCH_TABLE = {
     "friendship": _dispatch_friendship,
 }
 ```
+
+`_cmd_owner` is slightly special: since `shlex.split()` breaks the line into words, it re-joins `argv` with spaces before calling `owner_cmd.execute()`, so `owner Ada Lovelace` works without quotes inside the session (outside it, `pwnpet owner "Ada Lovelace"` does need them).
 
 **5. Commands with special semantics.** `help` and `arise` are handled **directly in the loop**, before consulting the table:
 - `help` requires no active connection and displays `print_help(creature_dead)` (the `arise` row only appears if the creature is dead).
@@ -538,6 +616,7 @@ Only the **public** characteristics (visible game state and interaction inputs) 
 |------|------|--------|-------------|
 | `species_id` | `0xFE01` | R | Species identifier (u16 LE) |
 | `name` | `0xFE02` | R | Creature name (UTF-8, max 16 B) |
+| `owner_name` | `0xFE09` | R | Badge holder's name (UTF-8, max 20 B) |
 | `happiness` | `0xFE03` | R | Happiness (0–1000) |
 | `hungry` | `0xFE04` | R | Hunger/energy level (0–1000) |
 | `state` | `0xFE05` | R | Emotional state (u8) |
@@ -555,6 +634,7 @@ Only the **public** characteristics (visible game state and interaction inputs) 
 | `mission_hint` | `0xC006` | R/W | Mission hint |
 | `factory_reset` | `0xC007` | W | Factory reset (used by `arise`) |
 | `friendship_cmd` | `0xC008` | R+W | Friendship protocol (opcodes) |
+| `set_owner` | `0xC009` | W | Set the badge holder's name (0–20 UTF-8 B; 0 = clear) |
 | `passkey_input` | `0x5E02` | W | Send passkey (3 digits) |
 
 > There are also **protected characteristics that contain flags**. By design they are *not* named in the CLI: they are reachable only by their raw UUID (`read 0xNNNN`) and return zero bytes until their access conditions are met. Discovering them is part of the challenges.
