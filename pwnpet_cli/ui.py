@@ -5,7 +5,7 @@ from __future__ import annotations
 from rich.console import Console
 from rich.table import Table
 
-from . import chars, format as fmt
+from . import bitmaps, chars, cloud_bitmaps, format as fmt
 
 console = Console()
 err_console = Console(stderr=True)
@@ -16,6 +16,8 @@ STATE_STYLE: dict[str, str] = {
     "curioso": "green",
     "leal": "blue",
     "paranoia": "bold red",
+    "muerto (salud)": "dim red",
+    "muerto (gordito)": "dim red",
     "hambriento": "bold magenta",
 }
 
@@ -58,19 +60,26 @@ def _fmt_value(key: str, val: object) -> str:
 
 
 def print_status(values: dict[str, object]) -> None:
+    st = str(values.get("state", "temeroso")).lower()
+    species = values.get("species_id", "cloud")
+    addon_conn = bool(values.get("addon_connected", True))
+    sprite = bitmaps.get_sprite(st, species=species, addon_connected=addon_conn)
+    if sprite:
+        console.print(f"[cyan]{sprite}[/]")
     t = Table(box=None, show_header=False, padding=(0, 1, 0, 0))
     t.add_column(style="dim", no_wrap=True)
     t.add_column()
     for key, label in fmt.STATUS_FIELDS:
-        t.add_row(f"{label}:", _fmt_value(key, values[key]))
+        if key in values:
+            t.add_row(f"{label}:", _fmt_value(key, values[key]))
     console.print(t)
 
 
-def print_help(creature_dead: bool = False) -> None:
+def print_help(creature_dead: bool = False, addon_connected: bool = True) -> None:
     t = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
     t.add_column(style="cyan", no_wrap=True)
     t.add_column(style="dim")
-    t.add_row("feed", "Feed the badge")
+    t.add_row("feed [amount]", "Feed the badge (default: 50, range 1-255)")
     t.add_row("pet", "Pet the badge")
     t.add_row("play <hex>", "Write u32 magic, read flag")
     t.add_row("rename <name>", "Change the pet's name (max 16 bytes)")
@@ -87,6 +96,11 @@ def print_help(creature_dead: bool = False) -> None:
     t.add_row("friendship proximity [on|off]", "Query or toggle proximity detection")
     t.add_row("read <name|0xNNNN>", "Read a characteristic by name or short UUID")
     t.add_row("write <name|0xNNNN> <hex>", "Write hex bytes to a characteristic")
+    if addon_connected:
+        t.add_row("addon ping|status|anim|set|blink|off", "Control Add-On via I2C")
+        t.add_row("clock countdown|reverse|spin|hour|off", "Control countdown ring / Neopixel")
+        t.add_row("reflex start|hit|status|secret", "Play Reflex Wheel minigame & Supernova")
+        t.add_row("led on|off|blink|alloff|ping ...", "Control Add-On LEDs via I2C")
     if creature_dead:
         t.add_row(
             "arise",

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 
-from .. import chars, transport, ui
-from . import add_target_arg, resolve_target
+from .. import bitmaps, chars, transport, ui
+from . import _ops, add_target_arg, resolve_target
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -14,8 +14,15 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser.set_defaults(handler=run)
 
 
-async def execute(conn: transport.Connection) -> None:
-    await conn.write(chars.NAME_TO_UUID["pet"], b"")
+async def execute(
+    conn: transport.Connection, species: str | int | None = None
+) -> None:
+    await conn.write(chars.NAME_TO_UUID["pet"], bytes([0x01]))
+    if species is None:
+        species = await _ops.get_conn_species(conn)
+    sprite = bitmaps.get_sprite("curious", species=species)
+    if sprite:
+        ui.console.print(f"[cyan]{sprite}[/]")
     ui.ok()
 
 
