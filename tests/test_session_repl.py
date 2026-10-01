@@ -24,7 +24,7 @@ class TestSessionReplDispatch:
         run(session_cmd._dispatch(conn, "addon", ["anim", "2"]))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, 2])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, 2]),
         )
 
     def test_session_addon_anim_compact(self):
@@ -32,7 +32,7 @@ class TestSessionReplDispatch:
         run(session_cmd._dispatch(conn, "addon", ["anim3"]))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, 3])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, 3]),
         )
 
     def test_session_addon_set(self):
@@ -40,7 +40,7 @@ class TestSessionReplDispatch:
         run(session_cmd._dispatch(conn, "addon", ["set", "blush", "1"]))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x02, 0x01])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x02, 0x01]),
         )
 
     def test_session_addon_blink(self):
@@ -48,7 +48,7 @@ class TestSessionReplDispatch:
         run(session_cmd._dispatch(conn, "addon", ["blink", "sauce", "3"]))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_BLINK, 0x04, 0x03])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_BLINK, 0x04, 0x03]),
         )
 
     def test_session_addon_off(self):
@@ -56,7 +56,7 @@ class TestSessionReplDispatch:
         run(session_cmd._dispatch(conn, "addon", ["off"]))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_ALL_OFF])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_ALL_OFF]),
         )
 
     def test_session_feed_and_pet(self):
@@ -72,4 +72,3 @@ class TestSessionReplDispatch:
         conn = _fake_conn()
         run(session_cmd._dispatch(conn, "oled", ["restore"]))
         conn.write.assert_called_once()
-

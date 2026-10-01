@@ -56,6 +56,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Control OLED SH1106 display via BLE -> I2C.",
     )
     from . import add_target_arg
+
     add_target_arg(parser)
 
     sub = parser.add_subparsers(dest="oled_cmd", metavar="<action>")
@@ -101,9 +102,7 @@ async def execute_restore(conn: transport.Connection) -> None:
     ui.ok("OLED: creature animation restored")
 
 
-async def execute_status(
-    conn: transport.Connection, page_id: int, value: int
-) -> None:
+async def execute_status(conn: transport.Connection, page_id: int, value: int) -> None:
     await _send(conn, bytes([REG_OLED_STATUS, page_id, value]))
     ui.ok(f"OLED: status page {page_id} = {value}")
 
@@ -137,9 +136,9 @@ DRIVER_MAP = {
 }
 
 DRIVER_NAMES = {
-    0: "SSD1306 128x64 (0.96\")",
-    1: "SH1106 128x64 (1.3\")",
-    2: "SSD1306 128x32 (0.91\")",
+    0: 'SSD1306 128x64 (0.96")',
+    1: 'SH1106 128x64 (1.3")',
+    2: 'SSD1306 128x32 (0.91")',
 }
 
 
@@ -177,9 +176,7 @@ async def execute_driver(
         ui.ok(f"OLED active driver: {name} [{st_str}]")
 
 
-async def execute_neopixel(
-    conn: transport.Connection, r: int, g: int, b: int
-) -> None:
+async def execute_neopixel(conn: transport.Connection, r: int, g: int, b: int) -> None:
     """Set Neopixel RGB color via 0xC00B or 0xC00A [0x10, r, g, b]."""
     for val, name in [(r, "r"), (g, "g"), (b, "b")]:
         if not (0 <= val <= 255):
@@ -189,7 +186,6 @@ async def execute_neopixel(
     except GattError:
         await conn.write(OLED_CHAR_UUID, bytes([0x10, r, g, b]))
     ui.ok(f"neopixel: RGB({r},{g},{b})")
-
 
 
 async def run(args: argparse.Namespace) -> int:

@@ -46,8 +46,7 @@ class TestAddonCommands:
         conn = _fake_conn(read_value=bytes([0xAD]))
         run(addon_cmd.execute_ping(conn))
         conn.write.assert_called_once_with(
-            addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_PING])
+            addon_cmd.OLED_CHAR_UUID, bytes([addon_cmd.OP_ADDON_PING])
         )
         conn.read.assert_called_once_with(addon_cmd.OLED_CHAR_UUID)
 
@@ -57,7 +56,7 @@ class TestAddonCommands:
             run(addon_cmd.execute_anim(conn, mode))
             conn.write.assert_called_once_with(
                 addon_cmd.OLED_CHAR_UUID,
-                bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, mode])
+                bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_ANIM_MODE, mode]),
             )
 
     def test_addon_anim_invalid(self):
@@ -72,14 +71,14 @@ class TestAddonCommands:
         run(addon_cmd.execute_set(conn, "eyes", 1))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x01, 0x01])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x01, 0x01]),
         )
 
         conn = _fake_conn()
         run(addon_cmd.execute_set(conn, "sauce", 0))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x04, 0x00])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_SET, 0x04, 0x00]),
         )
 
     def test_addon_blink(self):
@@ -87,7 +86,7 @@ class TestAddonCommands:
         run(addon_cmd.execute_blink(conn, "all", 2))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_BLINK, 0x07, 0x02])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_BLINK, 0x07, 0x02]),
         )
 
     def test_addon_blink_invalid_period(self):
@@ -102,5 +101,5 @@ class TestAddonCommands:
         run(addon_cmd.execute_off(conn))
         conn.write.assert_called_once_with(
             addon_cmd.OLED_CHAR_UUID,
-            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_ALL_OFF])
+            bytes([addon_cmd.OP_ADDON_WRITE, addon_cmd.REG_LED_ALL_OFF]),
         )

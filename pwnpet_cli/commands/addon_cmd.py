@@ -50,6 +50,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Control Tamal Add-On via BLE -> I2C.",
     )
     from . import add_target_arg
+
     add_target_arg(parser)
 
     sub = parser.add_subparsers(dest="addon_cmd", metavar="<action>")
@@ -73,7 +74,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     # 4. BLINK
     p_blink = sub.add_parser("blink", help="Set LED blink rate")
     p_blink.add_argument("led", help="LED: eyes, blush, sauce, all or bitmask")
-    p_blink.add_argument("period", type=int, help="Period in tenths of a second (1=100ms)")
+    p_blink.add_argument(
+        "period", type=int, help="Period in tenths of a second (1=100ms)"
+    )
 
     # 5. OFF
     sub.add_parser("off", help="Turn off all LEDs on Add-On")
@@ -109,10 +112,15 @@ async def execute_status(
         await conn.write(OLED_CHAR_UUID, bytes([OP_ADDON_STATUS]))
         resp = await conn.read(OLED_CHAR_UUID)
         if resp and len(resp) >= 1:
-            is_connected = (resp[0] == 0x01)
+            is_connected = resp[0] == 0x01
             last_ping = resp[1] if len(resp) >= 2 else 0x00
             st_code = resp[2] if len(resp) >= 3 else 0x00
-            st_name = {0: "DISCONNECTED", 1: "CONNECTING", 2: "CONNECTED", 3: "DISCONNECTING"}.get(st_code, "UNKNOWN")
+            st_name = {
+                0: "DISCONNECTED",
+                1: "CONNECTING",
+                2: "CONNECTED",
+                3: "DISCONNECTING",
+            }.get(st_code, "UNKNOWN")
             if is_connected:
                 if species is None:
                     species = await _ops.get_conn_species(conn)
@@ -121,7 +129,9 @@ async def execute_status(
                     ui.console.print(f"[cyan]{sprite}[/]")
                 ui.ok(f"ADDON: CONNECTED (state={st_name}, ping=0x{last_ping:02X})")
             else:
-                ui.warn(f"ADDON: DISCONNECTED (state={st_name}, ping=0x{last_ping:02X})")
+                ui.warn(
+                    f"ADDON: DISCONNECTED (state={st_name}, ping=0x{last_ping:02X})"
+                )
         else:
             ui.warn("ADDON: empty status response")
     except GattError as exc:
@@ -158,7 +168,9 @@ async def execute_set(conn: transport.Connection, led_str: str, state: int) -> N
     ui.ok(f"ADDON: set {led_str} (mask=0x{mask:02X}) -> {'ON' if state else 'OFF'}")
 
 
-async def execute_blink(conn: transport.Connection, led_str: str, period_ds: int) -> None:
+async def execute_blink(
+    conn: transport.Connection, led_str: str, period_ds: int
+) -> None:
     mask = _parse_mask(led_str)
     if not (1 <= period_ds <= 255):
         raise UsageError("period must be 1-255 (tenths of a second)")

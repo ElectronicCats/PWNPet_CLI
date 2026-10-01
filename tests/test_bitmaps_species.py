@@ -42,13 +42,21 @@ class TestSpriteIsolation:
         llama_sprite = bitmaps.get_sprite("curious", species="llama")
 
         assert cat_sprite == "", "Cat has a physical screen; CLI sprite must be empty"
-        assert llama_sprite == "", "Llama has a physical screen; CLI sprite must be empty"
+        assert (
+            llama_sprite == ""
+        ), "Llama has a physical screen; CLI sprite must be empty"
 
     def test_cloud_renders_sprite_only_when_addon_connected(self):
-        cloud_addon_off = bitmaps.get_sprite("curious", species="cloud", addon_connected=False)
-        cloud_addon_on = bitmaps.get_sprite("curious", species="cloud", addon_connected=True)
+        cloud_addon_off = bitmaps.get_sprite(
+            "curious", species="cloud", addon_connected=False
+        )
+        cloud_addon_on = bitmaps.get_sprite(
+            "curious", species="cloud", addon_connected=True
+        )
 
-        assert cloud_addon_off == "", "Cloud sprite must be locked when Add-On is not connected"
+        assert (
+            cloud_addon_off == ""
+        ), "Cloud sprite must be locked when Add-On is not connected"
         assert cloud_addon_on != "", "Cloud sprite must render when Add-On is connected"
 
     def test_unknown_species_returns_empty(self):
@@ -57,7 +65,9 @@ class TestSpriteIsolation:
 
     def test_cloud_bitmaps_backward_compatibility(self):
         legacy_sprite = cloud_bitmaps.get_sprite("curious", addon_connected=True)
-        cloud_sprite = bitmaps.get_sprite("curious", species="cloud", addon_connected=True)
+        cloud_sprite = bitmaps.get_sprite(
+            "curious", species="cloud", addon_connected=True
+        )
         assert legacy_sprite == cloud_sprite
 
 
@@ -97,7 +107,9 @@ class TestUIPrintStatusSpeciesIntegration:
         }
         ui.print_status(values)
         captured = capsys.readouterr().out
-        cloud_sprite = bitmaps.get_sprite("curioso", species="cloud", addon_connected=True)
+        cloud_sprite = bitmaps.get_sprite(
+            "curioso", species="cloud", addon_connected=True
+        )
         assert "Cloudy" in captured
         assert "0x0004 (Pwn Cloud)" in captured
         assert cloud_sprite in captured

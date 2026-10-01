@@ -21,4 +21,6 @@ __all__ = [
 
 def get_sprite(name: str, width: int = 80, addon_connected: bool = True) -> str:
     """Legacy get_sprite signature defaulting to cloud species."""
-    return bitmaps.get_sprite(name, species="cloud", width=width, addon_connected=addon_connected)
+    return bitmaps.get_sprite(
+        name, species="cloud", width=width, addon_connected=addon_connected
+    )

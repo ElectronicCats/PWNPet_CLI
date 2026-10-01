@@ -98,8 +98,12 @@ def print_help(creature_dead: bool = False, addon_connected: bool = True) -> Non
     t.add_row("write <name|0xNNNN> <hex>", "Write hex bytes to a characteristic")
     if addon_connected:
         t.add_row("addon ping|status|anim|set|blink|off", "Control Add-On via I2C")
-        t.add_row("clock countdown|reverse|spin|hour|off", "Control countdown ring / Neopixel")
-        t.add_row("reflex start|hit|status|secret", "Play Reflex Wheel minigame & Supernova")
+        t.add_row(
+            "clock countdown|reverse|spin|hour|off", "Control countdown ring / Neopixel"
+        )
+        t.add_row(
+            "reflex start|hit|status|secret", "Play Reflex Wheel minigame & Supernova"
+        )
         t.add_row("led on|off|blink|alloff|ping ...", "Control Add-On LEDs via I2C")
     if creature_dead:
         t.add_row(

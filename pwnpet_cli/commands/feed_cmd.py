@@ -14,7 +14,13 @@ _DEFAULT_FEED_AMOUNT = 50
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("feed", help="Feed the badge.")
     add_target_arg(parser)
-    parser.add_argument("amount", nargs="?", type=int, default=_DEFAULT_FEED_AMOUNT, help="Amount 1-255 (default 50)")
+    parser.add_argument(
+        "amount",
+        nargs="?",
+        type=int,
+        default=_DEFAULT_FEED_AMOUNT,
+        help="Amount 1-255 (default 50)",
+    )
     parser.set_defaults(handler=run)
 
 

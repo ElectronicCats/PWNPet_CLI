@@ -10,13 +10,25 @@ class TestCliStartup:
     def test_subcommands_registered(self):
         parser = build_parser()
         expected = [
-            "session", "scan", "target", "status", "read", "write",
-            "feed", "pet", "play", "passkey", "rename", "owner",
-            "missions", "flag", "oled", "addon", "clock"
+            "session",
+            "scan",
+            "target",
+            "status",
+            "read",
+            "write",
+            "feed",
+            "pet",
+            "play",
+            "passkey",
+            "rename",
+            "owner",
+            "missions",
+            "flag",
+            "oled",
+            "addon",
+            "clock",
         ]
-        subparsers_action = [
-            a for a in parser._actions if a.dest == "cmd"
-        ][0]
+        subparsers_action = [a for a in parser._actions if a.dest == "cmd"][0]
         for cmd in expected:
             assert cmd in subparsers_action.choices
 

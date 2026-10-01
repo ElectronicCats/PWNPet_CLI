@@ -69,7 +69,9 @@ def _parse_mask(val: str) -> int:
     try:
         m = int(val, 0)
     except ValueError:
-        raise UsageError(f"invalid mask '{val}', expected hex (0xFFF) or decimal integer")
+        raise UsageError(
+            f"invalid mask '{val}', expected hex (0xFFF) or decimal integer"
+        )
     if not (0 <= m <= 0xFFF):
         raise UsageError(f"mask 0x{m:X} out of range (max 12 bits: 0x000..0xFFF)")
     return m
@@ -94,7 +96,9 @@ async def execute_status(conn: transport.Connection) -> tuple[int, int]:
 async def execute_countdown(conn: transport.Connection, seconds: int) -> None:
     if seconds <= 0 or seconds > 65535:
         raise UsageError("countdown seconds must be between 1 and 65535")
-    payload = bytes([OP_CLOCK_CONTROL, SUB_COUNTDOWN, seconds & 0xFF, (seconds >> 8) & 0xFF])
+    payload = bytes(
+        [OP_CLOCK_CONTROL, SUB_COUNTDOWN, seconds & 0xFF, (seconds >> 8) & 0xFF]
+    )
     try:
         await conn.write(OLED_CHAR_UUID, payload)
         ui.ok(f"CLOCK: countdown timer started ({seconds}s)")
@@ -181,7 +185,9 @@ async def execute_reflex(conn: transport.Connection) -> None:
     payload = bytes([OP_CLOCK_CONTROL, SUB_REFLEX])
     try:
         await conn.write(OLED_CHAR_UUID, payload)
-        ui.ok("REFLEX: Reflex Wheel minigame started! Hit when LED reaches 12:00 (Top / Azure)")
+        ui.ok(
+            "REFLEX: Reflex Wheel minigame started! Hit when LED reaches 12:00 (Top / Azure)"
+        )
     except GattError as exc:
         raise GattError(f"reflex start: {exc.message}") from exc
 
@@ -219,6 +225,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Control 12-LED countdown dial (Villa Cloud Ekoparty 2026).",
     )
     from . import add_target_arg
+
     add_target_arg(parser)
 
     sub = parser.add_subparsers(dest="clock_cmd", metavar="<action>")
@@ -232,7 +239,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     p_cd.add_argument("seconds", type=int, help="Duration in seconds (e.g. 10, 30, 60)")
 
     # 3. REVERSE
-    sub.add_parser("reverse", help="Start continuous reverse ticking (12 -> 11 -> ... -> 1)")
+    sub.add_parser(
+        "reverse", help="Start continuous reverse ticking (12 -> 11 -> ... -> 1)"
+    )
 
     # 4. SPIN
     sub.add_parser("spin", help="Start fast reverse spin")

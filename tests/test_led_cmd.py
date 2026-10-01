@@ -24,30 +24,24 @@ class TestOledExecution:
         conn = _fake_conn()
         run(led_cmd.execute_restore(conn))
         conn.write.assert_called_once_with(
-            led_cmd.OLED_CHAR_UUID,
-            bytes([led_cmd.REG_OLED_RESTORE])
+            led_cmd.OLED_CHAR_UUID, bytes([led_cmd.REG_OLED_RESTORE])
         )
 
     def test_execute_status(self):
         conn = _fake_conn()
         run(led_cmd.execute_status(conn, page_id=0, value=100))
         conn.write.assert_called_once_with(
-            led_cmd.OLED_CHAR_UUID,
-            bytes([led_cmd.REG_OLED_STATUS, 0, 100])
+            led_cmd.OLED_CHAR_UUID, bytes([led_cmd.REG_OLED_STATUS, 0, 100])
         )
 
     def test_execute_ping(self):
         conn = _fake_conn()
         run(led_cmd.execute_ping(conn))
         conn.write.assert_called_once_with(
-            led_cmd.OLED_CHAR_UUID,
-            bytes([led_cmd.REG_OLED_PING])
+            led_cmd.OLED_CHAR_UUID, bytes([led_cmd.REG_OLED_PING])
         )
 
     def test_execute_neopixel(self):
         conn = _fake_conn()
         run(led_cmd.execute_neopixel(conn, 255, 128, 0))
-        conn.write.assert_called_once_with(
-            chars._u16(0xC00B),
-            bytes([255, 128, 0])
-        )
+        conn.write.assert_called_once_with(chars._u16(0xC00B), bytes([255, 128, 0]))

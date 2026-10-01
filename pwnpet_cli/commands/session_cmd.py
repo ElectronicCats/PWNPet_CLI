@@ -255,7 +255,6 @@ async def _cmd_oled(conn: transport.Connection, argv: list[str]) -> None:
         )
 
 
-
 def _no_args(fn):
     async def _w(conn, _):
         await fn(conn)
@@ -283,7 +282,16 @@ async def _cmd_addon(conn: transport.Connection, argv: list[str]) -> None:
         await addon_cmd.execute_status(conn)
     elif action == "ping":
         await addon_cmd.execute_ping(conn)
-    elif action in ("anim", "anim1", "anim2", "anim3", "anim4", "anim5", "anim6", "anim7"):
+    elif action in (
+        "anim",
+        "anim1",
+        "anim2",
+        "anim3",
+        "anim4",
+        "anim5",
+        "anim6",
+        "anim7",
+    ):
         if action.startswith("anim") and len(action) > 4 and action[4:].isdigit():
             mode = int(action[4:])
         elif len(argv) >= 2:
@@ -296,7 +304,9 @@ async def _cmd_addon(conn: transport.Connection, argv: list[str]) -> None:
         await addon_cmd.execute_anim(conn, mode)
     elif action == "set":
         if len(argv) < 3:
-            raise UsageError("addon set: usage 'addon set <eyes|blush|sauce|all> <1|0>'")
+            raise UsageError(
+                "addon set: usage 'addon set <eyes|blush|sauce|all> <1|0>'"
+            )
         try:
             state = int(argv[2])
         except ValueError:
@@ -304,7 +314,9 @@ async def _cmd_addon(conn: transport.Connection, argv: list[str]) -> None:
         await addon_cmd.execute_set(conn, argv[1], state)
     elif action == "blink":
         if len(argv) < 3:
-            raise UsageError("addon blink: usage 'addon blink <eyes|blush|sauce|all> <period_ds>'")
+            raise UsageError(
+                "addon blink: usage 'addon blink <eyes|blush|sauce|all> <period_ds>'"
+            )
         try:
             period = int(argv[2])
         except ValueError:
@@ -459,7 +471,10 @@ async def _repl(conn: transport.Connection, addr: str) -> None:
             ui.print_help(creature_dead, addon_connected=addon_connected)
             continue
 
-        if cmd in ("addon", "clock", "timer", "reflex", "led", "oled") and not addon_connected:
+        if (
+            cmd in ("addon", "clock", "timer", "reflex", "led", "oled")
+            and not addon_connected
+        ):
             ui.print_error(
                 "hardware",
                 "Add-On hardware not detected. Connect the Tamal SAO Add-On to unlock display and Add-On commands.",
