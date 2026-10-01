@@ -5,7 +5,7 @@ from __future__ import annotations
 from rich.console import Console
 from rich.table import Table
 
-from . import bitmaps, chars, cloud_bitmaps, format as fmt
+from . import bitmaps, chars, format as fmt
 
 console = Console()
 err_console = Console(stderr=True)

@@ -1,77 +1,14 @@
-"""Species-aware dynamic PNG image renderer with embedded fallbacks.
+"""Species-aware sprite renderer.
 
 Enforces strict species isolation:
-- Cat (0x0002): Renders only Cat assets/bitmaps.
-- Llama (0x0003): Renders only Llama assets/bitmaps.
-- Cloud (0x0004): Renders only Cloud assets/bitmaps.
+- Cat (0x0002): Renders only Cat bitmaps.
+- Llama (0x0003): Renders only Llama bitmaps.
+- Cloud (0x0004): Renders only Cloud bitmaps.
 """
 
 from __future__ import annotations
 
-import os
 import re
-from pathlib import Path
-
-try:
-    from PIL import Image
-
-    HAS_PIL = True
-except ImportError:
-    HAS_PIL = False
-
-
-def _resolve_assets_base() -> Path:
-    env_override = os.environ.get("PWNPET_ASSETS_PATH")
-    if env_override and Path(env_override).exists():
-        return Path(env_override)
-
-    pkg_assets = Path(__file__).resolve().parent / "assets" / "64"
-    if pkg_assets.exists():
-        return pkg_assets
-
-    sibling_assets = (
-        Path(__file__).resolve().parent.parent.parent
-        / "Badge-Villa-Cloud-Ekoparty-2026/firmware/badge/firmware/src/species/example/sprites/assets/64"
-    )
-    if sibling_assets.exists():
-        return sibling_assets
-
-    monorepo_assets = (
-        Path(__file__).resolve().parent.parent.parent
-        / "firmware/badge/firmware/src/species/example/sprites/assets/64"
-    )
-    if monorepo_assets.exists():
-        return monorepo_assets
-
-    return pkg_assets
-
-
-_ASSETS_BASE = _resolve_assets_base()
-
-STATE_TO_PNG: dict[str, str] = {
-    "temeroso": "Temeroso.png",
-    "idle": "Temeroso.png",
-    "huevo": "Temeroso.png",
-    "curioso": "Curious.png",
-    "curious": "Curious.png",
-    "happy": "Curious.png",
-    "leal": "Leal.png",
-    "loyal": "Leal.png",
-    "paranoia": "Paranoia.png",
-    "angry": "Paranoia.png",
-    "celebrando": "Celebrando.png",
-    "celebrate": "Celebrando.png",
-    "friends": "Friends.png",
-    "addon": "Friends.png",
-    "attached": "Friends.png",
-    "hambriento": "Hambriento.png",
-    "gordito1": "Gordito1.png",
-    "gordito2": "Gordito2.png",
-    "gordito3": "Gordito3.png",
-    "muerto0": "Muerto0.png",
-    "muerto1": "Muerto1.png",
-    "arise": "Arise.png",
-}
 
 EMBEDDED_CLOUD_SPRITES: dict[str, str] = {
     "arise": "██████▀███▀██  ▄                     ▄▄██▀                   ▄   ▄  █▀███▀██████\n███▀▀████ ██▀▀ ██  █▄    ▄ █    ▄▄ ██████▄▄    ▄    ▄█▄▄█    ▀  ██ ▀▀██▀████▀███\n███ ██████▀   ▄██▄ ▄██▀█▄█ █  ▄█ ▄ ██████████▄ ▀█▄  ▀▄███▀█ █   ██    ▀█████▄ ██\n███▄▀█▀  ▀ ▄▄▄██▀  ██ █   ███  ▄█  █████▄▀▄ ██ █▄▀ ███▄  ▄  █▄  ▀▀▄▄█▄ ▀  ▀█▄███\n██████  ▀ ▄ ▄ ▀   ██▀█▀▄▄▄▄▀  ▄█   ▀███▄█████▀  ██   ▀▄▄▄▀█ ▀██▄  █▀  █    ███▀█\n██████ ▄ ██▄██▀█▄██▀ █▀▄▄█▀  ▄█     ▀ █▄▄█ ▀     ██▄█ ██▄▀▀▄ ██▀▄█▀██▄██ ▄ ▀████\n██ ▀█ █▄ ▀▀▄▄█▄████ █  ██▀ █▄██   ▄█▀▀▀▀▀▀▀██▄    ██▀  ██   ▄▀████▄█▄▄█▀ ▄█ ██▀█\n██▀██ ████████▄██▀███▀ ▄█ ███▀▄▄▄█  ▄ ███▀▀▀▀██▄  ███▄  █ ▀▀███ ██ ████████ ▀█ █\n▀███  ▄▀ ███▀██  █▀ ██▄▄█▄▀▄▄▀ ▄▄▄▄▀ ▀▀       █ █▄▄▄▀▀ ██▄██▀ ▀█  ██▀███ ▀▄▄ ██▀\n█▄█▀  ███▀▀█ ███ ▀▄▄▀█▄▄▀██▀ ██▀   ▄▄      ▄▄  ▀ █▄ ▀██▀▄▄▄█▀█▄█ ███▀██▀███▀▄ ▀█\n█▄██  █▀ ████▄▄▀▀▄█▀▄▀█▄█▀█   █    █ █     █ █      █ ▀█▄▄█ ▄ ██▀▀ ▄▄▄█▀ ▀▀▄ █ █\n █▀  ▀█ ██▀██ ███▀▀▀█▄▀▀▀▀▀█ ▀█▄    █  ▄ ▄  ▀      ▄█▄ █▀▀ ▄██▀▀███ ▄██ ▀▄█ ██ █\n██ █  █▄ ▄██████  █▄▄▀ ▄   ▀▀▄▄ ▀▀▀▀ ▀▄ ▀ ▄▄▄▄▄▄  ▄▀▀ ██ ▄ ▀▄██▄ ██████▄▄██▀▀ ▄█\n█▄ █▄ █▀ ██▄▀██▀█▀██▀ ▄▀▀▄     ▀█▄▄▄▄▄▄█▄██▄  ▀▀▀▀▀ ▄█▀ ▀▀   ██▀█▀██▀▄██▀██ ▄█▀█\n██  ▀ ██▄▀▀█▀ █ █▄ ▀  █     ▄    ████████████▄█▀████▀ ▄▄▀ █  ▀ ▄█ ██ ██▀▄██ █▄██\n█ ▀█  ▀███▄▀█▄ ▄██▀   ▀█▄ ▀▄██▄ ▄█ ▀█▀▀▀▀▀▀█▀ █▄    ▄█▀▀▄█▀  ▀▀██▄  ▄ ▄▄██▀ ▀███\n██▀█ ▄ ▀██▀█▄▀▀████▀   ▀▀██ █▄  ██▄▄█      █▄▄██  ███▀██▀▀   ▄████▀▀█▄▀██▀ ▄ ███\n███▄ ▀█▄▄ ▀▄▄█ ██▀██▀█▄ ▄▄ █ ▀ █▄▄▄███    ███▄▄▄█  ▀ █ ▄  ▄█▀██▀██ ▀▄▄█  ▄██ ██▄\n██▄██▄ ▀██  ██  ████████▄▀█ ▀▄█▄▄▄▄▄██    ██▄▄▄▄▄█▄▀█ █▀█████████  ██▀ ██▀ ▄█▀▄█\n███▄▀▀▀▄▄ ▀  ██▄▄▄▄▀▀▀▀█████ ▀███████▀    ▀███████▀     ██▀▀▀ ▄▄▄███▀   ▄▄█▀▄███",
@@ -177,43 +114,6 @@ def normalize_species(species: str | int | None) -> str:
     return "unknown"
 
 
-def render_png_to_unicode(png_path: Path, target_width: int = 80) -> str:
-    if not HAS_PIL or not png_path.exists():
-        return ""
-    try:
-        with Image.open(png_path) as im:
-            rgba = im.convert("RGBA")
-            alpha = rgba.getchannel("A")
-            w, h = alpha.size
-            aspect = h / w
-            target_height = int(target_width * aspect * 0.5) * 2
-            if target_height < 2:
-                target_height = 2
-
-            resized = alpha.resize(
-                (target_width, target_height), Image.Resampling.LANCZOS
-            )
-
-            lines = []
-            for y in range(0, target_height, 2):
-                line = []
-                for x in range(target_width):
-                    top = resized.getpixel((x, y)) > 100
-                    bot = resized.getpixel((x, y + 1)) > 100
-                    if top and bot:
-                        line.append("█")
-                    elif top:
-                        line.append("▀")
-                    elif bot:
-                        line.append("▄")
-                    else:
-                        line.append(" ")
-                lines.append("".join(line))
-            return "\n".join(lines)
-    except Exception:
-        return ""
-
-
 def get_sprite(
     name: str,
     species: str | int = "cloud",
@@ -233,13 +133,5 @@ def get_sprite(
 
     if sp != "cloud" or not addon_connected:
         return ""
-
-    filename = STATE_TO_PNG.get(key, "Temeroso.png")
-    png_path = _ASSETS_BASE / "cloud" / filename
-
-    if HAS_PIL and png_path.exists():
-        res = render_png_to_unicode(png_path, target_width=width)
-        if res:
-            return res
 
     return EMBEDDED_CLOUD_SPRITES.get(key, EMBEDDED_CLOUD_SPRITES.get("temeroso", ""))
