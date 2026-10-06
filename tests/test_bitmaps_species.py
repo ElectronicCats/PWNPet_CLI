@@ -36,43 +36,31 @@ class TestSpeciesNormalization:
 
 
 class TestSpriteIsolation:
-    def test_cat_and_llama_do_not_render_terminal_sprites(self):
-        # Badges with physical screens (Cat, Llama) do NOT render terminal sprites in CLI.
-        cat_sprite = bitmaps.get_sprite("curious", species="cat")
+    def test_llama_does_not_render_cat_or_cloud(self):
         llama_sprite = bitmaps.get_sprite("curious", species="llama")
+        cat_sprite = bitmaps.get_sprite("curious", species="cat")
+        cloud_sprite = bitmaps.get_sprite("curious", species="cloud")
 
-        assert cat_sprite == "", "Cat has a physical screen; CLI sprite must be empty"
-        assert (
-            llama_sprite == ""
-        ), "Llama has a physical screen; CLI sprite must be empty"
+        assert llama_sprite, "Llama sprite should not be empty"
+        assert cat_sprite, "Cat sprite should not be empty"
+        assert cloud_sprite, "Cloud sprite should not be empty"
 
-    def test_cloud_renders_sprite_only_when_addon_connected(self):
-        cloud_addon_off = bitmaps.get_sprite(
-            "curious", species="cloud", addon_connected=False
-        )
-        cloud_addon_on = bitmaps.get_sprite(
-            "curious", species="cloud", addon_connected=True
-        )
-
-        assert (
-            cloud_addon_off == ""
-        ), "Cloud sprite must be locked when Add-On is not connected"
-        assert cloud_addon_on != "", "Cloud sprite must render when Add-On is connected"
+        assert llama_sprite != cloud_sprite, "Llama sprite must not equal Cloud sprite"
+        assert llama_sprite != cat_sprite, "Llama sprite must not equal Cat sprite"
+        assert cat_sprite != cloud_sprite, "Cat sprite must not equal Cloud sprite"
 
     def test_unknown_species_returns_empty(self):
         assert bitmaps.get_sprite("curious", species=0x9999) == ""
         assert bitmaps.get_sprite("curious", species="unknown") == ""
 
     def test_cloud_bitmaps_backward_compatibility(self):
-        legacy_sprite = cloud_bitmaps.get_sprite("curious", addon_connected=True)
-        cloud_sprite = bitmaps.get_sprite(
-            "curious", species="cloud", addon_connected=True
-        )
+        legacy_sprite = cloud_bitmaps.get_sprite("curious")
+        cloud_sprite = bitmaps.get_sprite("curious", species="cloud")
         assert legacy_sprite == cloud_sprite
 
 
 class TestUIPrintStatusSpeciesIntegration:
-    def test_print_status_with_llama_no_terminal_sprite(self, capsys):
+    def test_print_status_with_llama(self, capsys):
         values = {
             "species_id": "0x0003 (Pwn Llama)",
             "name": "LlamaTest",
@@ -84,32 +72,52 @@ class TestUIPrintStatusSpeciesIntegration:
             "sensor_value": "0",
             "all_missions_done": "false",
             "owner_name": "Omar",
-            "addon_connected": False,
         }
         ui.print_status(values)
         captured = capsys.readouterr().out
+        llama_sprite = bitmaps.get_sprite("curioso", species="llama")
+        cloud_sprite = bitmaps.get_sprite("curioso", species="cloud")
+
         assert "LlamaTest" in captured
         assert "0x0003 (Pwn Llama)" in captured
 
-    def test_print_status_with_cloud_addon_connected_shows_sprite(self, capsys):
+    def test_print_status_dead_states(self, capsys):
+        for state_name in ["muerto_salud", "muerto (salud)", "muerto_gordito", "muerto (gordito)"]:
+            values = {
+                "species_id": "0x0004 (Pwn Cloud)",
+                "name": "CloudDead",
+                "happiness": "0",
+                "hungry": "0",
+                "health": "0",
+                "state": state_name,
+                "xp": "0",
+                "sensor_value": "0",
+                "all_missions_done": "false",
+                "owner_name": "Test",
+            }
+            ui.print_status(values)
+            captured = capsys.readouterr().out
+            expected_key = "muerto1" if "gordito" in state_name else "muerto0"
+            expected_sprite = bitmaps.EMBEDDED_CLOUD_SPRITES[expected_key]
+            temeroso_sprite = bitmaps.EMBEDDED_CLOUD_SPRITES["temeroso"]
+            assert expected_sprite in captured, f"Dead status for {state_name} must render {expected_key}"
+            assert temeroso_sprite not in captured, f"Dead status for {state_name} must NOT render temeroso"
+
+    def test_print_status_overfed_state(self, capsys):
         values = {
             "species_id": "0x0004 (Pwn Cloud)",
-            "name": "Cloudy",
+            "name": "CloudFat",
             "happiness": "1000",
-            "hungry": "500",
+            "hungry": "950",
             "health": "1000",
-            "state": "curioso",
-            "xp": "10",
+            "state": "temeroso",
+            "xp": "0",
             "sensor_value": "0",
             "all_missions_done": "false",
-            "owner_name": "Omar",
-            "addon_connected": True,
+            "owner_name": "Test",
         }
         ui.print_status(values)
         captured = capsys.readouterr().out
-        cloud_sprite = bitmaps.get_sprite(
-            "curioso", species="cloud", addon_connected=True
-        )
-        assert "Cloudy" in captured
-        assert "0x0004 (Pwn Cloud)" in captured
-        assert cloud_sprite in captured
+        gordito3_sprite = bitmaps.EMBEDDED_CLOUD_SPRITES["gordito3"]
+        assert gordito3_sprite in captured, "Overfed status (hungry>=900) must render gordito3 sprite"
+
