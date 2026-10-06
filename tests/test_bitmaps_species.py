@@ -36,18 +36,28 @@ class TestSpeciesNormalization:
 
 
 class TestSpriteIsolation:
-    def test_llama_does_not_render_cat_or_cloud(self):
-        llama_sprite = bitmaps.get_sprite("curious", species="llama")
+    def test_cat_and_llama_do_not_render_terminal_sprites(self):
+        # Badges with physical screens (Cat, Llama) do NOT render terminal sprites in CLI.
         cat_sprite = bitmaps.get_sprite("curious", species="cat")
-        cloud_sprite = bitmaps.get_sprite("curious", species="cloud")
+        llama_sprite = bitmaps.get_sprite("curious", species="llama")
 
-        assert llama_sprite, "Llama sprite should not be empty"
-        assert cat_sprite, "Cat sprite should not be empty"
-        assert cloud_sprite, "Cloud sprite should not be empty"
+        assert cat_sprite == "", "Cat has a physical screen; CLI sprite must be empty"
+        assert (
+            llama_sprite == ""
+        ), "Llama has a physical screen; CLI sprite must be empty"
 
-        assert llama_sprite != cloud_sprite, "Llama sprite must not equal Cloud sprite"
-        assert llama_sprite != cat_sprite, "Llama sprite must not equal Cat sprite"
-        assert cat_sprite != cloud_sprite, "Cat sprite must not equal Cloud sprite"
+    def test_cloud_renders_sprite_only_when_addon_connected(self):
+        cloud_addon_off = bitmaps.get_sprite(
+            "curious", species="cloud", addon_connected=False
+        )
+        cloud_addon_on = bitmaps.get_sprite(
+            "curious", species="cloud", addon_connected=True
+        )
+
+        assert (
+            cloud_addon_off == ""
+        ), "Cloud sprite must be locked when Add-On is not connected"
+        assert cloud_addon_on != "", "Cloud sprite must render when Add-On is connected"
 
     def test_unknown_species_returns_empty(self):
         assert bitmaps.get_sprite("curious", species=0x9999) == ""
@@ -57,6 +67,7 @@ class TestSpriteIsolation:
         legacy_sprite = cloud_bitmaps.get_sprite("curious")
         cloud_sprite = bitmaps.get_sprite("curious", species="cloud")
         assert legacy_sprite == cloud_sprite
+
 
 
 class TestUIPrintStatusSpeciesIntegration:
