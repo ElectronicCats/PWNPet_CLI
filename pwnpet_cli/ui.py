@@ -10,6 +10,7 @@ from . import bitmaps, chars, format as fmt
 console = Console()
 err_console = Console(stderr=True)
 
+
 # State name → Rich style, shared with scan_cmd.
 STATE_STYLE: dict[str, str] = {
     "temeroso": "yellow",
@@ -17,7 +18,9 @@ STATE_STYLE: dict[str, str] = {
     "leal": "blue",
     "paranoia": "bold red",
     "muerto (salud)": "dim red",
+    "muerto_salud": "dim red",
     "muerto (gordito)": "dim red",
+    "muerto_gordito": "dim red",
     "hambriento": "bold magenta",
 }
 
@@ -62,20 +65,40 @@ def _fmt_value(key: str, val: object) -> str:
 def print_status(values: dict[str, object]) -> None:
     st = str(values.get("state", "temeroso")).lower()
     species = values.get("species_id", "cloud")
-    addon_conn = bool(values.get("addon_connected", True))
-    sprite = bitmaps.get_sprite(st, species=species, addon_connected=addon_conn)
+    sprite_name = st
+    is_dead = st in (
+        "muerto_salud",
+        "muerto (salud)",
+        "muerto_gordito",
+        "muerto (gordito)",
+        "muerto0",
+        "muerto1",
+    )
+    if not is_dead:
+        try:
+            h = int(values.get("hungry", 0))
+            if h >= 900:
+                sprite_name = "gordito3"
+            elif h >= 750:
+                sprite_name = "gordito2"
+            elif h >= 600:
+                sprite_name = "gordito1"
+        except (ValueError, TypeError):
+            pass
+
+    sprite = bitmaps.get_sprite(sprite_name, species=species)
     if sprite:
         console.print(f"[cyan]{sprite}[/]")
     t = Table(box=None, show_header=False, padding=(0, 1, 0, 0))
     t.add_column(style="dim", no_wrap=True)
     t.add_column()
     for key, label in fmt.STATUS_FIELDS:
-        if key in values:
-            t.add_row(f"{label}:", _fmt_value(key, values[key]))
+        t.add_row(f"{label}:", _fmt_value(key, values[key]))
     console.print(t)
 
 
-def print_help(creature_dead: bool = False, addon_connected: bool = True) -> None:
+
+def print_help(creature_dead: bool = False) -> None:
     t = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
     t.add_column(style="cyan", no_wrap=True)
     t.add_column(style="dim")
@@ -96,15 +119,10 @@ def print_help(creature_dead: bool = False, addon_connected: bool = True) -> Non
     t.add_row("friendship proximity [on|off]", "Query or toggle proximity detection")
     t.add_row("read <name|0xNNNN>", "Read a characteristic by name or short UUID")
     t.add_row("write <name|0xNNNN> <hex>", "Write hex bytes to a characteristic")
-    if addon_connected:
-        t.add_row("addon ping|status|anim|set|blink|off", "Control Add-On via I2C")
-        t.add_row(
-            "clock countdown|reverse|spin|hour|off", "Control countdown ring / Neopixel"
-        )
-        t.add_row(
-            "reflex start|hit|status|secret", "Play Reflex Wheel minigame & Supernova"
-        )
-        t.add_row("led on|off|blink|alloff|ping ...", "Control Add-On LEDs via I2C")
+    t.add_row("addon ping|status|anim|set|blink|off", "Control Add-On via I2C")
+    t.add_row("clock countdown|reverse|spin|hour|off", "Control countdown ring / Neopixel")
+    t.add_row("reflex start|hit|status|secret", "Play Reflex Wheel minigame & Supernova")
+    t.add_row("led on|off|blink|alloff|ping ...", "Control Add-On LEDs via I2C")
     if creature_dead:
         t.add_row(
             "arise",
