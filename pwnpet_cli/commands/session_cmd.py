@@ -29,6 +29,7 @@ from . import (
     write_cmd,
     addon_cmd,
     clock_cmd,
+    arise_cmd,
 )
 
 
@@ -482,37 +483,10 @@ async def _repl(conn: transport.Connection, addr: str) -> None:
             continue
 
         if cmd == "arise":
-            creature_dead = await _creature_is_dead(conn)
-            if not creature_dead:
-                ui.print_error(
-                    "arise",
-                    "command only available when the creature is dead "
-                    "(state: muerto_salud or muerto_gordito)",
-                )
-                continue
-            try:
-                confirm = ui.console.input(
-                    "[bold red]WARNING:[/] This will wipe all saved data and reboot the device.\n"
-                    "Type [bold]yes[/] to confirm: "
-                )
-            except (KeyboardInterrupt, EOFError):
-                ui.console.print()
-                continue
-            if confirm.strip().lower() != "yes":
-                ui.console.print("[dim]Aborted.[/]")
-                continue
-            try:
-                await conn.write(chars.NAME_TO_UUID["factory_reset"], bytes([0x01]))
-            except GattError:
-                ui.console.print(
-                    "[red]Arise blocked:[/] the creature died too recently — "
-                    "wait 3 minutes after death before using arise."
-                )
-                continue
-            ui.console.print(
-                "[yellow]Factory reset initiated. Device will reboot in ~1 s.[/]"
-            )
-            return
+            resurrected = await arise_cmd.execute(conn, addon_connected=addon_connected)
+            if resurrected:
+                return
+            continue
 
         try:
             await _dispatch(conn, cmd, parts[1:])

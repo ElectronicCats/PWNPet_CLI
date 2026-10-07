@@ -29,6 +29,7 @@ from .commands import (
     addon_cmd,
     clock_cmd,
     led_cmd,
+    arise_cmd,
 )
 
 
@@ -87,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     addon_cmd.add_parser(subparsers)
     clock_cmd.add_parser(subparsers)
     led_cmd.add_parser(subparsers)
+    arise_cmd.add_parser(subparsers)
     return parser
 
 
