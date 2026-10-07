@@ -74,22 +74,33 @@ def get_sprite(
     """Retrieve state sprite for the specified species.
 
     Hardware rules:
-    - Badges with physical screens (Cat 0x0002, Llama 0x0003) render animations
-      on their hardware OLED screens and do NOT render sprites in the CLI terminal.
+    - Badges render ASCII sprites for their respective species (Cat 0x0002, Llama 0x0003, Cloud 0x0004).
     - Cloud (0x0004) is screenless: CLI terminal sprites render ONLY when the
       Tamal SAO Add-On hardware is detected (addon_connected=True).
     """
     key = name.lower().strip()
     sp = normalize_species(species)
 
-    if sp != "cloud" or not addon_connected:
+    if sp == "unknown":
+        return ""
+
+    if sp == "cloud" and not addon_connected:
+        return ""
+
+    sprites = {
+        "cat": EMBEDDED_CAT_SPRITES,
+        "llama": EMBEDDED_LLAMA_SPRITES,
+        "cloud": EMBEDDED_CLOUD_SPRITES,
+    }.get(sp, {})
+
+    if not sprites:
         return ""
 
     alt_key = STATE_ALIAS_MAP.get(key, key)
-    if key in EMBEDDED_CLOUD_SPRITES:
-        return EMBEDDED_CLOUD_SPRITES[key]
-    if alt_key in EMBEDDED_CLOUD_SPRITES:
-        return EMBEDDED_CLOUD_SPRITES[alt_key]
-    return EMBEDDED_CLOUD_SPRITES.get("temeroso", "")
+    if key in sprites:
+        return sprites[key]
+    if alt_key in sprites:
+        return sprites[alt_key]
+    return sprites.get("temeroso", sprites.get("idle", ""))
 
 

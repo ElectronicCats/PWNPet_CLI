@@ -36,15 +36,18 @@ class TestSpeciesNormalization:
 
 
 class TestSpriteIsolation:
-    def test_cat_and_llama_do_not_render_terminal_sprites(self):
-        # Badges with physical screens (Cat, Llama) do NOT render terminal sprites in CLI.
+    def test_cat_llama_and_cloud_render_distinct_sprites(self):
         cat_sprite = bitmaps.get_sprite("curious", species="cat")
         llama_sprite = bitmaps.get_sprite("curious", species="llama")
+        cloud_sprite = bitmaps.get_sprite("curious", species="cloud", addon_connected=True)
 
-        assert cat_sprite == "", "Cat has a physical screen; CLI sprite must be empty"
-        assert (
-            llama_sprite == ""
-        ), "Llama has a physical screen; CLI sprite must be empty"
+        assert cat_sprite != "", "Cat species should render Cat ASCII sprite"
+        assert llama_sprite != "", "Llama species should render Llama ASCII sprite"
+        assert cloud_sprite != "", "Cloud species should render Cloud ASCII sprite"
+
+        assert cat_sprite != llama_sprite, "Cat sprite must not equal Llama sprite"
+        assert cat_sprite != cloud_sprite, "Cat sprite must not equal Cloud sprite"
+        assert llama_sprite != cloud_sprite, "Llama sprite must not equal Cloud sprite"
 
     def test_cloud_renders_sprite_only_when_addon_connected(self):
         cloud_addon_off = bitmaps.get_sprite(
