@@ -22,7 +22,9 @@ _STATE_NAMES: dict[int, str] = {
 _FLAG_RE = re.compile(rb"^PWNPET\{[0-9a-f]{12}\}$")
 
 
-def render_state(byte: int) -> str:
+def render_state(byte: int | bytes) -> str:
+    if isinstance(byte, (bytes, bytearray)):
+        byte = byte[0] if byte else 0
     return _STATE_NAMES.get(byte, f"unknown({byte})")
 
 
