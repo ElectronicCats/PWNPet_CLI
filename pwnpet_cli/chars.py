@@ -45,6 +45,7 @@ NAME_TO_UUID: dict[str, str] = {
     "factory_reset": _u16(0xC007),
     "friendship_cmd": _u16(0xC008),  # R+W: write FRIENDSHIP_BLE_* opcode, read result
     "set_owner": _u16(0xC009),  # W: badge holder's name (0..20 UTF-8; 0 = clear)
+    "led_control": _u16(0xC00A),  # W: LED control payload forwarded to Add-On via I2C
     # Memoria input (W)
     "passkey_input": _u16(0x5E02),
 }
@@ -55,6 +56,7 @@ SPECIES_TABLE: dict[int, str] = {
     0x0001: "stub",
     0x0002: "Pwn Cat",
     0x0003: "Pwn Llama",
+    0x0004: "Pwn Cloud",
 }
 
 

@@ -31,6 +31,9 @@ class TestRenderSpeciesId:
     def test_known_species(self):
         assert chars.render_species_id(0x0002) == "0x0002 (Pwn Cat)"
 
+    def test_cloud_species(self):
+        assert chars.render_species_id(0x0004) == "0x0004 (Pwn Cloud)"
+
     def test_unknown_species(self):
         assert chars.render_species_id(0x9999) == "0x9999 (unknown)"
 
@@ -41,6 +44,9 @@ class TestOwnerName:
 
     def test_set_owner_write_uuid(self):
         assert chars.resolve("set_owner") == "0000c009-0000-1000-8000-00805f9b34fb"
+
+    def test_led_control_uuid(self):
+        assert chars.resolve("led_control") == "0000c00a-0000-1000-8000-00805f9b34fb"
 
     def test_owner_name_decoder_is_utf8(self):
         # Accented name round-trips through the UTF-8 decoder.

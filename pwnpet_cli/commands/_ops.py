@@ -6,6 +6,26 @@ from ..errors import UsageError
 from .. import chars, format as fmt, transport
 
 
+async def check_addon_connected(conn: transport.Connection) -> bool:
+    """Check if SAO Add-On hardware is connected over BLE I2C (0xC00A)."""
+    try:
+        uuid = chars.NAME_TO_UUID["led_control"]
+        await conn.write(uuid, bytes([0x01]))
+        resp = await conn.read(uuid)
+        return bool(resp and resp[0] == 0x01)
+    except Exception:
+        return False
+
+
+async def get_conn_species(conn: transport.Connection) -> str:
+    """Read species_id from BLE connection, falling back to 'cloud' on error."""
+    try:
+        species_b = await conn.read(chars.NAME_TO_UUID["species_id"])
+        return chars.render_species_id(fmt.render_u16_le(species_b))
+    except Exception:
+        return "cloud"
+
+
 async def fetch_status(conn: transport.Connection) -> dict[str, object]:
     """Read and decode all 10 public status characteristics."""
     owner_b = await conn.read(chars.NAME_TO_UUID["owner_name"])
@@ -18,6 +38,7 @@ async def fetch_status(conn: transport.Connection) -> dict[str, object]:
     xp_b = await conn.read(chars.NAME_TO_UUID["xp"])
     sensor_b = await conn.read(chars.NAME_TO_UUID["sensor_value"])
     done_b = await conn.read(chars.NAME_TO_UUID["all_missions_done"])
+    addon_conn = await check_addon_connected(conn)
     return {
         "owner_name": fmt.render_utf8(owner_b),
         "species_id": chars.render_species_id(fmt.render_u16_le(species_b)),
@@ -29,6 +50,7 @@ async def fetch_status(conn: transport.Connection) -> dict[str, object]:
         "xp": fmt.render_u16_le(xp_b),
         "sensor_value": fmt.render_u16_le(sensor_b),
         "all_missions_done": fmt.render_bool(done_b),
+        "addon_connected": addon_conn,
     }
 
 

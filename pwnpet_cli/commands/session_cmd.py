@@ -1,9 +1,8 @@
-"""`pwnpet session` — interactive REPL over a persistent BLE connection.
+"""`pwnpet session` -- interactive REPL over a persistent BLE connection.
 
 Connects once and keeps the link open across all commands, eliminating
 the per-command scan + service-discovery + disconnect overhead (~5-10 s
 per invocation). Disconnect happens only on 'exit', 'quit', or Ctrl+D.
-feed always sends the fixed amount (50).
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ from . import add_target_arg, resolve_target
 from . import (
     feed_cmd,
     flag_cmd,
+    led_cmd,
     missions_cmd,
     owner_cmd,
     passkey_cmd,
@@ -27,6 +27,9 @@ from . import (
     rename_cmd,
     status_cmd,
     write_cmd,
+    addon_cmd,
+    clock_cmd,
+    arise_cmd,
 )
 
 
@@ -202,6 +205,57 @@ async def _cmd_flag(conn: transport.Connection, argv: list[str]) -> None:
     await flag_cmd.execute(conn, mid)
 
 
+async def _cmd_oled(conn: transport.Connection, argv: list[str]) -> None:
+    if not argv:
+        raise UsageError(
+            "oled requires a subcommand: restore, status, ping, neopixel, driver"
+        )
+    sub = argv[0].lower()
+
+    if sub == "restore":
+        await led_cmd.execute_restore(conn)
+
+    elif sub == "status":
+        if len(argv) < 3:
+            raise UsageError("oled status <page_id> <value>")
+        page_id_str = argv[1].lower()
+        if page_id_str in led_cmd.STATUS_PAGES:
+            page_id = led_cmd.STATUS_PAGES[page_id_str]
+        else:
+            try:
+                page_id = int(page_id_str)
+            except ValueError:
+                raise UsageError(f"unknown page_id {argv[1]!r}")
+        try:
+            value = int(argv[2])
+        except ValueError:
+            raise UsageError(f"invalid value: {argv[2]!r}")
+        await led_cmd.execute_status(conn, page_id, value)
+
+    elif sub == "ping":
+        await led_cmd.execute_ping(conn)
+
+    elif sub == "driver":
+        driver_name = argv[1] if len(argv) > 1 else None
+        await led_cmd.execute_driver(conn, driver_name)
+
+    elif sub == "neopixel":
+        if len(argv) < 4:
+            raise UsageError("oled neopixel <r> <g> <b>")
+        try:
+            r = int(argv[1])
+            g = int(argv[2])
+            b = int(argv[3])
+        except ValueError:
+            raise UsageError("RGB values must be integers (0-255)")
+        await led_cmd.execute_neopixel(conn, r, g, b)
+
+    else:
+        raise UsageError(
+            f"unknown subcommand {sub!r} -- try: restore, status, ping, driver, neopixel"
+        )
+
+
 def _no_args(fn):
     async def _w(conn, _):
         await fn(conn)
@@ -209,8 +263,146 @@ def _no_args(fn):
     return _w
 
 
+async def _cmd_feed(conn: transport.Connection, argv: list[str]) -> None:
+    amount = feed_cmd._DEFAULT_FEED_AMOUNT
+    if argv:
+        try:
+            amount = int(argv[0])
+        except ValueError:
+            raise UsageError(f"feed: expected a number, got {argv[0]!r}")
+    await feed_cmd.execute(conn, amount)
+
+
+async def _cmd_addon(conn: transport.Connection, argv: list[str]) -> None:
+    if not argv:
+        raise UsageError(
+            "addon requires an action: status, ping, anim <1-7|0>, set <led> <1|0>, blink <led> <period>, off"
+        )
+    action = argv[0].lower()
+    if action == "status":
+        await addon_cmd.execute_status(conn)
+    elif action == "ping":
+        await addon_cmd.execute_ping(conn)
+    elif action in (
+        "anim",
+        "anim1",
+        "anim2",
+        "anim3",
+        "anim4",
+        "anim5",
+        "anim6",
+        "anim7",
+    ):
+        if action.startswith("anim") and len(action) > 4 and action[4:].isdigit():
+            mode = int(action[4:])
+        elif len(argv) >= 2:
+            try:
+                mode = int(argv[1])
+            except ValueError:
+                raise UsageError(f"anim: expected number (0-7), got {argv[1]!r}")
+        else:
+            raise UsageError("addon anim: expected mode number (0-7)")
+        await addon_cmd.execute_anim(conn, mode)
+    elif action == "set":
+        if len(argv) < 3:
+            raise UsageError(
+                "addon set: usage 'addon set <eyes|blush|sauce|all> <1|0>'"
+            )
+        try:
+            state = int(argv[2])
+        except ValueError:
+            raise UsageError(f"set: expected 1 or 0, got {argv[2]!r}")
+        await addon_cmd.execute_set(conn, argv[1], state)
+    elif action == "blink":
+        if len(argv) < 3:
+            raise UsageError(
+                "addon blink: usage 'addon blink <eyes|blush|sauce|all> <period_ds>'"
+            )
+        try:
+            period = int(argv[2])
+        except ValueError:
+            raise UsageError(f"blink: expected number, got {argv[2]!r}")
+        await addon_cmd.execute_blink(conn, argv[1], period)
+    elif action == "off":
+        await addon_cmd.execute_off(conn)
+    else:
+        raise UsageError(
+            f"unknown addon action {action!r} -- try: ping, anim, set, blink, off"
+        )
+
+
+async def _cmd_clock(conn: transport.Connection, argv: list[str]) -> None:
+    if not argv:
+        raise UsageError(
+            "clock requires an action: countdown <sec>, reverse, spin, forward, sweep, pulse, hour <1-12>, mask <hex>, off, status"
+        )
+    action = argv[0].lower()
+    if action == "status":
+        await clock_cmd.execute_status(conn)
+    elif action in ("countdown", "cd"):
+        if len(argv) < 2:
+            raise UsageError("clock countdown: usage 'clock countdown <seconds>'")
+        try:
+            sec = int(argv[1])
+        except ValueError:
+            raise UsageError(f"countdown: expected number of seconds, got {argv[1]!r}")
+        await clock_cmd.execute_countdown(conn, sec)
+    elif action in ("reverse", "rev"):
+        await clock_cmd.execute_reverse(conn)
+    elif action == "spin":
+        await clock_cmd.execute_spin(conn)
+    elif action in ("forward", "fwd"):
+        await clock_cmd.execute_forward(conn)
+    elif action == "sweep":
+        await clock_cmd.execute_sweep(conn)
+    elif action == "pulse":
+        await clock_cmd.execute_pulse(conn)
+    elif action == "hour":
+        if len(argv) < 2:
+            raise UsageError("clock hour: usage 'clock hour <1-12>'")
+        try:
+            hr = int(argv[1])
+        except ValueError:
+            raise UsageError(f"hour: expected number (1-12), got {argv[1]!r}")
+        await clock_cmd.execute_hour(conn, hr)
+    elif action == "mask":
+        if len(argv) < 2:
+            raise UsageError("clock mask: usage 'clock mask <0xHEX|int>'")
+        await clock_cmd.execute_mask(conn, argv[1])
+    elif action == "off":
+        await clock_cmd.execute_off(conn)
+    elif action in ("reflex", "game"):
+        await clock_cmd.execute_reflex(conn)
+    elif action == "hit":
+        await clock_cmd.execute_hit(conn)
+    elif action in ("secret", "supernova"):
+        await clock_cmd.execute_secret(conn)
+    elif action in ("ambient", "mood"):
+        await clock_cmd.execute_ambient(conn)
+    else:
+        raise UsageError(
+            f"unknown clock action {action!r} -- try: countdown, reverse, spin, forward, sweep, pulse, hour, mask, off, reflex, hit, secret, ambient, status"
+        )
+
+
+async def _cmd_reflex(conn: transport.Connection, argv: list[str]) -> None:
+    action = argv[0].lower() if argv else "start"
+    if action in ("start", "play", "game"):
+        await clock_cmd.execute_reflex(conn)
+    elif action == "hit":
+        await clock_cmd.execute_hit(conn)
+    elif action in ("status", "stat"):
+        await clock_cmd.execute_status(conn)
+    elif action in ("secret", "supernova"):
+        await clock_cmd.execute_secret(conn)
+    elif action in ("off", "stop"):
+        await clock_cmd.execute_off(conn)
+    else:
+        raise UsageError("reflex: usage 'reflex [start|hit|status|secret|off]'")
+
+
 _DISPATCH_TABLE = {
-    "feed": _no_args(feed_cmd.execute),
+    "feed": _cmd_feed,
     "pet": _no_args(pet_cmd.execute),
     "play": _cmd_play,
     "status": _no_args(status_cmd.execute),
@@ -221,6 +413,12 @@ _DISPATCH_TABLE = {
     "write": _cmd_write,
     "missions": _cmd_missions,
     "flag": _cmd_flag,
+    "led": _cmd_oled,
+    "oled": _cmd_oled,
+    "addon": _cmd_addon,
+    "clock": _cmd_clock,
+    "timer": _cmd_clock,
+    "reflex": _cmd_reflex,
     "friendship": _dispatch_friendship,
 }
 
@@ -233,15 +431,20 @@ async def _dispatch(conn: transport.Connection, cmd: str, argv: list[str]) -> No
     await handler(conn, argv)
 
 
+from . import _ops
+
+
 async def _repl(conn: transport.Connection, addr: str) -> None:
     ui.console.print(f"[green]Connected to {addr}.[/]")
     ui.console.print(
         "[dim]Type 'help' for available commands, 'exit' or Ctrl+D to disconnect.[/]\n"
     )
     creature_dead = False
+    addon_connected = False
     try:
         await _dispatch(conn, "status", [])
         creature_dead = await _creature_is_dead(conn)
+        addon_connected = await _ops.check_addon_connected(conn)
         ui.console.print()
     except (GattError, UsageError):
         pass  # status on connect is best-effort
@@ -266,41 +469,24 @@ async def _repl(conn: transport.Connection, addr: str) -> None:
         if cmd in ("exit", "quit"):
             return
         if cmd == "help":
-            ui.print_help(creature_dead)
+            ui.print_help(creature_dead, addon_connected=addon_connected)
+            continue
+
+        if (
+            cmd in ("addon", "clock", "timer", "reflex", "led", "oled")
+            and not addon_connected
+        ):
+            ui.print_error(
+                "hardware",
+                "Add-On hardware not detected. Connect the Tamal SAO Add-On to unlock display and Add-On commands.",
+            )
             continue
 
         if cmd == "arise":
-            creature_dead = await _creature_is_dead(conn)
-            if not creature_dead:
-                ui.print_error(
-                    "arise",
-                    "command only available when the creature is dead "
-                    "(state: muerto_salud or muerto_gordito)",
-                )
-                continue
-            try:
-                confirm = ui.console.input(
-                    "[bold red]WARNING:[/] This will wipe all saved data and reboot the device.\n"
-                    "Type [bold]yes[/] to confirm: "
-                )
-            except (KeyboardInterrupt, EOFError):
-                ui.console.print()
-                continue
-            if confirm.strip().lower() != "yes":
-                ui.console.print("[dim]Aborted.[/]")
-                continue
-            try:
-                await conn.write(chars.NAME_TO_UUID["factory_reset"], bytes([0x01]))
-            except GattError:
-                ui.console.print(
-                    "[red]Arise blocked:[/] the creature died too recently — "
-                    "wait 3 minutes after death before using arise."
-                )
-                continue
-            ui.console.print(
-                "[yellow]Factory reset initiated. Device will reboot in ~1 s.[/]"
-            )
-            return
+            resurrected = await arise_cmd.execute(conn, addon_connected=addon_connected)
+            if resurrected:
+                return
+            continue
 
         try:
             await _dispatch(conn, cmd, parts[1:])

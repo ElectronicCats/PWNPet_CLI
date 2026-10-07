@@ -26,6 +26,10 @@ from .commands import (
     session_cmd,
     missions_cmd,
     flag_cmd,
+    addon_cmd,
+    clock_cmd,
+    led_cmd,
+    arise_cmd,
 )
 
 
@@ -81,6 +85,10 @@ def build_parser() -> argparse.ArgumentParser:
     owner_cmd.add_parser(subparsers)
     missions_cmd.add_parser(subparsers)
     flag_cmd.add_parser(subparsers)
+    addon_cmd.add_parser(subparsers)
+    clock_cmd.add_parser(subparsers)
+    led_cmd.add_parser(subparsers)
+    arise_cmd.add_parser(subparsers)
     return parser
 
 
@@ -114,6 +122,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if asyncio.iscoroutine(result):
             return asyncio.run(_run(result)) or 0
         return result or 0
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        ui.console.print()
+        return 0
     except UsageError as exc:
         if args.handler is None:
             # Implicit session with no target: guide the user instead of printing an error.
